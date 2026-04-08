@@ -256,7 +256,7 @@ export default function App(){
   const addTx=(f,t,n)=>P({...d,tx:[...d.tx,{f,t,n,dt:new Date().toISOString().slice(0,10)}]});
   const rmTx=(i)=>P({...d,tx:d.tx.filter((_,j)=>j!==i)});
   const rmSig=(lid,i)=>P({...d,layers:d.layers.map(l=>l.id===lid?{...l,sig:l.sig.filter((_,j)=>j!==i)}:l)});
-  const addStk=(lid,s)=>P({...d,stocks:{...d.stocks,[lid]:[...(d.stocks[lid]||[]),s]}});
+  const addStk=(lid,s)=>{const ns={...d.stocks,[lid]:[...(d.stocks[lid]||[]),s]};P({...d,stocks:ns});doFetch(ns);};
   const rmStk=(lid,i)=>P({...d,stocks:{...d.stocks,[lid]:d.stocks[lid].filter((_,j)=>j!==i)}});
   const addSrc=(s)=>P({...d,sources:[...d.sources,{...s,id:"s"+Date.now()}]});
   const rmSrc=(id)=>P({...d,sources:d.sources.filter(x=>x.id!==id)});
