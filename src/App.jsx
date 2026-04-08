@@ -1,4 +1,119 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+
+// ===== FINNHUB API KEY =====
+const FINNHUB_KEY = "d7as2l9r01qtpbh9kjj0d7as2l9r01qtpbh9kjjg";
+
+// ===== 行情拉取 =====
+// 美股：Finnhub /quote
+// A股/港股/台股/韩股：新浪财经接口（JSONP via script tag）
+
+function finnhubQuote(symbol){
+  return fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`)
+    .then(r=>r.json())
+    .then(j=>{
+      if(!j||j.c==null||j.c===0) return null;
+      const chg = j.pc>0 ? +((j.c-j.pc)/j.pc*100).toFixed(2) : 0;
+      return {p:+j.c.toFixed(2), c:chg};
+    })
+    .catch(()=>null);
+}
+
+// 新浪财经：支持 A股(sz/sh前缀)、港股(hk前缀)、美股(gb_前缀)、台股(tw前缀)
+// 代码映射规则：
+//   A股: 6开头→sh，其他→sz
+//   港股: 5位数字→hk{code}
+//   台股: 4位数字→tw{code}
+//   韩股: 6位数字→kr{code}（新浪不支持，跳过）
+function sinaCode(ticker, market){
+  if(market==="A"){
+    return ticker.startsWith("6") ? `sh${ticker}` : `sz${ticker}`;
+  }
+  if(market==="HK") return `hk${ticker.replace(/^0+/,'')}`;  // 去前导0
+  if(market==="TW") return `tw${ticker}`;
+  return null;
+}
+
+function sinaQuote(ticker, market){
+  const code = sinaCode(ticker, market);
+  if(!code) return Promise.resolve(null);
+  return new Promise((resolve)=>{
+    const cbName = `_sina_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const timer = setTimeout(()=>{
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(null);
+    }, 8000);
+    // 新浪直接返回 var hq_str_xxx="..." 格式，用 fetch 解析更可靠
+    fetch(`https://hq.sinajs.cn/list=${code}`, {
+      headers:{ Referer:"https://finance.sina.com.cn" }
+    })
+    .then(r=>r.text())
+    .then(txt=>{
+      clearTimeout(timer);
+      delete window[cbName];
+      document.body.removeChild(script);
+      // 解析: var hq_str_sh600000="浦发银行,10.10,10.08,10.05,..."
+      const m = txt.match(/"([^"]+)"/);
+      if(!m||!m[1]) return resolve(null);
+      const parts = m[1].split(",");
+      if(market==="HK"){
+        // 港股格式：名称,昨收,今开,最高,最低,现价,...
+        const price = parseFloat(parts[6]);
+        const prevClose = parseFloat(parts[3]);
+        if(!price||!prevClose) return resolve(null);
+        const chg = +((price-prevClose)/prevClose*100).toFixed(2);
+        resolve({p:price, c:chg});
+      } else if(market==="A"){
+        // A股: 名称,今开,昨收,现价,...
+        const price = parseFloat(parts[3]);
+        const prevClose = parseFloat(parts[2]);
+        if(!price||!prevClose) return resolve(null);
+        const chg = +((price-prevClose)/prevClose*100).toFixed(2);
+        resolve({p:price, c:chg});
+      } else if(market==="TW"){
+        const price = parseFloat(parts[6]);
+        const prevClose = parseFloat(parts[3]);
+        if(!price||!prevClose) return resolve(null);
+        const chg = +((price-prevClose)/prevClose*100).toFixed(2);
+        resolve({p:price, c:chg});
+      } else {
+        resolve(null);
+      }
+    })
+    .catch(()=>{
+      clearTimeout(timer);
+      try{ document.body.removeChild(script); }catch(e){}
+      resolve(null);
+    });
+    document.body.appendChild(script);
+  });
+}
+
+// 对所有股票并发拉取，返回 {ticker_market: {p, c}} 映射
+async function fetchAllQuotes(stocks){
+  const tasks = [];
+  for(const [lid, list] of Object.entries(stocks)){
+    for(const s of list){
+      const key = `${s.t}_${s.m}`;
+      if(s.m==="US"||s.m==="KR"){
+        // 韩股 Finnhub 用 KRX:代码格式，美股直接用ticker
+        const sym = s.m==="KR" ? `KRX:${s.t}` : s.t;
+        tasks.push(finnhubQuote(sym).then(q=>({key, q})));
+      } else {
+        tasks.push(sinaQuote(s.t, s.m).then(q=>({key, q})));
+      }
+    }
+  }
+  const results = await Promise.allSettled(tasks);
+  const map = {};
+  for(const r of results){
+    if(r.status==="fulfilled"&&r.value&&r.value.q){
+      map[r.value.key] = r.value.q;
+    }
+  }
+  return map;
+}
 
 const LI = ["L0","L1","L2","L3","L4","L5","L6","L7","L8"];
 const LN = {L0:"能源层",L1:"芯片层",L2:"基础设施层",L3:"模型与平台层",L4:"工具与中间件层",L5:"内容供给层",L6:"分发与变现层",L7:"具身智能层",L8:"终端应用层"};
@@ -84,12 +199,45 @@ export default function App(){
   const[d,setD]=useState(()=>initData());
   const[ready,setReady]=useState(false);
   const[pg,setPg]=useState("main");
+  const[quotes,setQuotes]=useState({});       // {ticker_market: {p, c}}
+  const[qStatus,setQStatus]=useState("idle"); // idle | loading | ok | err
+  const[qTime,setQTime]=useState(null);       // 最后更新时间
+  const stocksRef = useRef(null);
 
   useEffect(()=>{
     const saved=loadD();
     if(saved && saved.layers && saved.stocks){setD(saved);}
     setReady(true);
   },[]);
+
+  // 行情拉取
+  const doFetch = useCallback(async(stocks)=>{
+    setQStatus("loading");
+    try{
+      const map = await fetchAllQuotes(stocks);
+      const count = Object.keys(map).length;
+      if(count>0){
+        setQuotes(map);
+        setQTime(new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}));
+        setQStatus("ok");
+      } else {
+        setQStatus("err");
+      }
+    }catch(e){
+      setQStatus("err");
+    }
+  },[]);
+
+  useEffect(()=>{
+    if(!ready) return;
+    stocksRef.current = d.stocks;
+    doFetch(d.stocks);
+    const timer = setInterval(()=>doFetch(stocksRef.current), 5*60*1000);
+    return ()=>clearInterval(timer);
+  },[ready]); // eslint-disable-line
+
+  // 当用户手动增删股票时更新 ref
+  useEffect(()=>{ stocksRef.current = d.stocks; },[d.stocks]);
 
   const P=useCallback((nd)=>{setD(nd);saveD(nd);},[]);
 
@@ -131,7 +279,7 @@ export default function App(){
       {pg==="main"?(
         <div style={{display:"flex",flexWrap:"wrap",alignItems:"flex-start"}}>
           <div style={{flex:"1 1 400px",minWidth:340,maxWidth:520,padding:10,borderRight:"1px solid #101820",overflowY:"auto",maxHeight:"calc(100vh - 40px)"}}>
-            <StockPanel stocks={d.stocks} addStk={addStk} rmStk={rmStk}/>
+            <StockPanel stocks={d.stocks} addStk={addStk} rmStk={rmStk} quotes={quotes} qStatus={qStatus} qTime={qTime} onRefresh={()=>doFetch(d.stocks)}/>
           </div>
           <div style={{flex:"1 1 440px",minWidth:360,padding:10,overflowY:"auto",maxHeight:"calc(100vh - 40px)"}}>
             <Radar layers={d.layers} tx={d.tx} scan={d.scan} setTmp={setTmp} setSS={setSS} addTx={addTx} rmTx={rmTx} rmSig={rmSig} onScan={()=>{const n=prompt("要点:");P({...d,scan:new Date().toISOString().slice(0,10)});}}/>
@@ -150,22 +298,37 @@ export default function App(){
 }
 
 // ===== STOCK PANEL (M2) =====
-function StockPanel({stocks,addStk,rmStk}){
+function StockPanel({stocks,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
   const[edit,setEdit]=useState(false);
   const[addTo,setAddTo]=useState(null);
   const[nf,setNf]=useState({t:"",n:"",m:"US"});
   const[collapsed,setCollapsed]=useState({});
 
+  const qc = qStatus==="loading"?"#D4A03C":qStatus==="ok"?"#4A9A5A":qStatus==="err"?"#C9503C":"#3A4A5A";
+  const ql = qStatus==="loading"?"拉取中…":qStatus==="ok"?`${qTime} 更新`:qStatus==="err"?"行情失败":"等待";
+
   return(
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-        <div><div style={{fontSize:14,fontWeight:700,color:"#DEE4EA"}}>产业链监控</div><div style={sub}>模块二 · 个股跟踪</div></div>
+        <div>
+          <div style={{fontSize:14,fontWeight:700,color:"#DEE4EA"}}>产业链监控</div>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginTop:1}}>
+            <span style={{width:5,height:5,borderRadius:"50%",background:qc}}/>
+            <span style={{fontSize:9,color:qc}}>{ql}</span>
+            {qStatus!=="loading"&&<button onClick={onRefresh} style={{border:"none",background:"transparent",color:"#3A4A5A",fontSize:9,cursor:"pointer",fontFamily:"inherit",padding:"0 2px"}}>↻</button>}
+          </div>
+        </div>
         <button onClick={()=>{setEdit(!edit);setAddTo(null);}} style={edit?{...btn,background:"#D4A03C",color:"#080B10"}:{...btn,background:"#141A26",color:"#6A7A8A"}}>{edit?"完成":"管理"}</button>
       </div>
       {LI.map(lid=>{
         const list=stocks[lid]||[];
-        const avg=list.length?(list.reduce((a,x)=>a+x.c,0)/list.length):0;
-        const ac=avg>1?"#4A9A5A":avg<-1?"#C9503C":"#6A7A8A";
+        // 用实时行情覆盖显示，没拿到就 fallback 到硬编码值
+        const liveList = list.map(s=>{
+          const q = quotes[`${s.t}_${s.m}`];
+          return q ? {...s, p:q.p, c:q.c} : s;
+        });
+        const avg=liveList.length?(liveList.reduce((a,x)=>a+x.c,0)/liveList.length):0;
+        const ac=avg>0.5?"#4A9A5A":avg<-0.5?"#C9503C":"#6A7A8A";
         const isC=!!collapsed[lid];
         return(
           <div key={lid} style={{marginBottom:1}}>
@@ -178,15 +341,17 @@ function StockPanel({stocks,addStk,rmStk}){
             </div>
             {!isC&&(
               <div style={{background:"#0A0E14",padding:"1px 8px 3px 33px",borderLeft:"3px solid #141A26"}}>
-                {list.map((s,i)=>{
+                {liveList.map((s,i)=>{
+                  const hasLive = !!quotes[`${s.t}_${s.m}`];
                   const cc=s.c>0?"#4A9A5A":s.c<0?"#C9503C":"#6A7A8A";
+                  const dispP = s.p>0 ? (s.p>999?Math.round(s.p).toLocaleString():s.p) : "—";
                   return(
                     <div key={i} style={{display:"flex",alignItems:"center",padding:"2px 0",borderBottom:"1px solid #0C1018",gap:3}}>
                       <span style={{fontFamily:"monospace",fontSize:10,color:"#4A5A6A",width:54,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.t}</span>
                       <span style={{flex:1,color:"#B0BCC8",fontSize:11}}>{s.n}</span>
                       <span style={{fontSize:8,padding:"0 3px",borderRadius:2,background:(MC[s.m]||"#555")+"18",color:MC[s.m]||"#555",fontWeight:600}}>{ML[s.m]||s.m}</span>
-                      <span style={{width:56,textAlign:"right",fontFamily:"monospace",fontSize:10,color:"#8A9AAA"}}>{s.p>999?Math.round(s.p).toLocaleString():s.p}</span>
-                      <span style={{width:44,textAlign:"right",fontFamily:"monospace",fontSize:10,color:cc,fontWeight:600}}>{s.c>0?"+":""}{s.c}%</span>
+                      <span style={{width:56,textAlign:"right",fontFamily:"monospace",fontSize:10,color:hasLive?"#A0AABA":"#3A4A5A"}}>{dispP}</span>
+                      <span style={{width:44,textAlign:"right",fontFamily:"monospace",fontSize:10,color:hasLive?cc:"#3A4A5A",fontWeight:600}}>{s.p>0?(s.c>0?"+":"")+s.c+"%":"—"}</span>
                       {edit&&<button onClick={()=>rmStk(lid,i)} style={xb}>×</button>}
                     </div>
                   );
@@ -207,7 +372,7 @@ function StockPanel({stocks,addStk,rmStk}){
           </div>
         );
       })}
-      <div style={{fontSize:9,color:"#1A2434",textAlign:"center",marginTop:8}}>模拟数据 · 部署后接入API</div>
+      <div style={{fontSize:9,color:"#1A2434",textAlign:"center",marginTop:8}}>Finnhub · 新浪财经 · 5min自动刷新</div>
     </div>
   );
 }
