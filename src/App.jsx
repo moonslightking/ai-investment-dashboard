@@ -117,8 +117,8 @@ async function fetchAllQuotes(stocks){
 
 const LI = ["L0","L1","L2","L3","L4","L5","L6","L7","L8"];
 const LN = {L0:"能源层",L1:"芯片层",L2:"基础设施层",L3:"模型与平台层",L4:"工具与中间件层",L5:"内容供给层",L6:"分发与变现层",L7:"具身智能层",L8:"终端应用层"};
-const TC = {cold:{l:"冷",c:"#4A6FA5"},warm:{l:"温",c:"#D4A03C"},hot:{l:"热",c:"#C9503C"}};
-const MC = {US:"#5A8ABF",HK:"#C9503C",A:"#D4A03C",TW:"#6A9A6A",KR:"#8A7ABF"};
+const TC = {cold:{l:"冷",c:"#6a9bcc"},warm:{l:"温",c:"#d97757"},hot:{l:"热",c:"#c0392b"}};
+const MC = {US:"#6a9bcc",HK:"#c0392b",A:"#d97757",TW:"#788c5d",KR:"#6a9bcc"};
 const ML = {US:"美",HK:"港",A:"A",TW:"台",KR:"韩"};
 
 function initStocks(){return{
@@ -241,7 +241,7 @@ export default function App(){
 
   const P=useCallback((nd)=>{setD(nd);saveD(nd);},[]);
 
-  if(!ready) return <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",background:"#080B10",color:"#2A3A4A",fontFamily:"monospace",fontSize:11}}>LOADING...</div>;
+  if(!ready) return <div style={{display:"flex",justifyContent:"center",alignItems:"center",height:"100vh",background:"#faf9f5",color:"#b0aea5",fontFamily:"monospace",fontSize:11}}>LOADING...</div>;
 
   const pushSig=(id,ly)=>{
     const it=d.items.find(x=>x.id===id);
@@ -264,11 +264,11 @@ export default function App(){
   const pend=d.items.filter(x=>x.st==="pending"&&x.ai.imp==="high").length;
 
   return(
-    <div style={{background:"#080B10",color:"#A0AABA",fontFamily:"'DM Sans','Noto Sans SC',sans-serif",fontSize:12,minHeight:"100vh"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",borderBottom:"1px solid #141C26",background:"#080B10",position:"sticky",top:0,zIndex:10}}>
+    <div style={{background:"#faf9f5",color:"#3d3c39",fontFamily:"'Poppins','Noto Sans SC',sans-serif",fontSize:12,minHeight:"100vh"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",borderBottom:"1px solid #141C26",background:"#faf9f5",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
-          <span style={{color:"#D4A03C",fontWeight:900}}>◆</span>
-          <span style={{fontSize:13,fontWeight:700,color:"#DEE4EA"}}>AI产业链投资看板</span>
+          <span style={{color:"#d97757",fontWeight:900}}>◆</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#141413"}}>AI产业链投资看板</span>
         </div>
         <div style={{display:"flex",gap:2}}>
           <button onClick={()=>setPg("main")} style={pg==="main"?bA:bN}>看板{pend>0&&<span style={bdg}>{pend}</span>}</button>
@@ -304,21 +304,21 @@ function StockPanel({stocks,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
   const[nf,setNf]=useState({t:"",n:"",m:"US"});
   const[collapsed,setCollapsed]=useState({});
 
-  const qc = qStatus==="loading"?"#D4A03C":qStatus==="ok"?"#4A9A5A":qStatus==="err"?"#C9503C":"#3A4A5A";
+  const qc = qStatus==="loading"?"#d97757":qStatus==="ok"?"#788c5d":qStatus==="err"?"#c0392b":"#8a8880";
   const ql = qStatus==="loading"?"拉取中…":qStatus==="ok"?`${qTime} 更新`:qStatus==="err"?"行情失败":"等待";
 
   return(
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <div>
-          <div style={{fontSize:14,fontWeight:700,color:"#DEE4EA"}}>产业链监控</div>
+          <div style={{fontSize:14,fontWeight:700,color:"#141413"}}>产业链监控</div>
           <div style={{display:"flex",alignItems:"center",gap:4,marginTop:1}}>
             <span style={{width:5,height:5,borderRadius:"50%",background:qc}}/>
             <span style={{fontSize:9,color:qc}}>{ql}</span>
-            {qStatus!=="loading"&&<button onClick={onRefresh} style={{border:"none",background:"transparent",color:"#3A4A5A",fontSize:9,cursor:"pointer",fontFamily:"inherit",padding:"0 2px"}}>↻</button>}
+            {qStatus!=="loading"&&<button onClick={onRefresh} style={{border:"none",background:"transparent",color:"#8a8880",fontSize:9,cursor:"pointer",fontFamily:"inherit",padding:"0 2px"}}>↻</button>}
           </div>
         </div>
-        <button onClick={()=>{setEdit(!edit);setAddTo(null);}} style={edit?{...btn,background:"#D4A03C",color:"#080B10"}:{...btn,background:"#141A26",color:"#6A7A8A"}}>{edit?"完成":"管理"}</button>
+        <button onClick={()=>{setEdit(!edit);setAddTo(null);}} style={edit?{...btn,background:"#d97757",color:"#faf9f5"}:{...btn,background:"#e8e6dc",color:"#8a8880"}}>{edit?"完成":"管理"}</button>
       </div>
       {LI.map(lid=>{
         const list=stocks[lid]||[];
@@ -328,30 +328,30 @@ function StockPanel({stocks,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
           return q ? {...s, p:q.p, c:q.c} : s;
         });
         const avg=liveList.length?(liveList.reduce((a,x)=>a+x.c,0)/liveList.length):0;
-        const ac=avg>0.5?"#4A9A5A":avg<-0.5?"#C9503C":"#6A7A8A";
+        const ac=avg>0.5?"#788c5d":avg<-0.5?"#c0392b":"#8a8880";
         const isC=!!collapsed[lid];
         return(
           <div key={lid} style={{marginBottom:1}}>
-            <div onClick={()=>setCollapsed(p=>({...p,[lid]:!p[lid]}))} style={{display:"flex",alignItems:"center",padding:"5px 8px",background:"#0D1118",borderLeft:"3px solid "+ac,cursor:"pointer"}}>
-              <span style={{fontFamily:"monospace",fontSize:10,color:"#3A4A5A",width:22,fontWeight:600}}>{lid}</span>
-              <span style={{fontSize:11,fontWeight:600,color:"#C0CCD8",flex:1}}>{LN[lid]}</span>
-              <span style={{fontSize:9,color:"#3A4A5A"}}>{list.length}只</span>
+            <div onClick={()=>setCollapsed(p=>({...p,[lid]:!p[lid]}))} style={{display:"flex",alignItems:"center",padding:"5px 8px",background:"#f0ede4",borderLeft:"3px solid "+ac,cursor:"pointer"}}>
+              <span style={{fontFamily:"monospace",fontSize:10,color:"#8a8880",width:22,fontWeight:600}}>{lid}</span>
+              <span style={{fontSize:11,fontWeight:600,color:"#1a1917",flex:1}}>{LN[lid]}</span>
+              <span style={{fontSize:9,color:"#8a8880"}}>{list.length}只</span>
               <span style={{fontSize:10,fontFamily:"monospace",color:ac,fontWeight:600,marginLeft:6}}>{avg>0?"+":""}{avg.toFixed(1)}%</span>
-              <span style={{fontSize:9,color:"#2A3444",marginLeft:4,display:"inline-block",transform:isC?"none":"rotate(180deg)",transition:"transform 0.1s"}}>▾</span>
+              <span style={{fontSize:9,color:"#b0aea5",marginLeft:4,display:"inline-block",transform:isC?"none":"rotate(180deg)",transition:"transform 0.1s"}}>▾</span>
             </div>
             {!isC&&(
-              <div style={{background:"#0A0E14",padding:"1px 8px 3px 33px",borderLeft:"3px solid #141A26"}}>
+              <div style={{background:"#f0ede4",padding:"1px 8px 3px 33px",borderLeft:"3px solid #141A26"}}>
                 {liveList.map((s,i)=>{
                   const hasLive = !!quotes[`${s.t}_${s.m}`];
-                  const cc=s.c>0?"#4A9A5A":s.c<0?"#C9503C":"#6A7A8A";
+                  const cc=s.c>0?"#788c5d":s.c<0?"#c0392b":"#8a8880";
                   const dispP = s.p>0 ? (s.p>999?Math.round(s.p).toLocaleString():s.p) : "—";
                   return(
                     <div key={i} style={{display:"flex",alignItems:"center",padding:"2px 0",borderBottom:"1px solid #0C1018",gap:3}}>
-                      <span style={{fontFamily:"monospace",fontSize:10,color:"#4A5A6A",width:54,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.t}</span>
-                      <span style={{flex:1,color:"#B0BCC8",fontSize:11}}>{s.n}</span>
+                      <span style={{fontFamily:"monospace",fontSize:10,color:"#6e6c66",width:54,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.t}</span>
+                      <span style={{flex:1,color:"#2a2925",fontSize:11}}>{s.n}</span>
                       <span style={{fontSize:8,padding:"0 3px",borderRadius:2,background:(MC[s.m]||"#555")+"18",color:MC[s.m]||"#555",fontWeight:600}}>{ML[s.m]||s.m}</span>
-                      <span style={{width:56,textAlign:"right",fontFamily:"monospace",fontSize:10,color:hasLive?"#A0AABA":"#3A4A5A"}}>{dispP}</span>
-                      <span style={{width:44,textAlign:"right",fontFamily:"monospace",fontSize:10,color:hasLive?cc:"#3A4A5A",fontWeight:600}}>{s.p>0?(s.c>0?"+":"")+s.c+"%":"—"}</span>
+                      <span style={{width:56,textAlign:"right",fontFamily:"monospace",fontSize:10,color:hasLive?"#3d3c39":"#8a8880"}}>{dispP}</span>
+                      <span style={{width:44,textAlign:"right",fontFamily:"monospace",fontSize:10,color:hasLive?cc:"#8a8880",fontWeight:600}}>{s.p>0?(s.c>0?"+":"")+s.c+"%":"—"}</span>
                       {edit&&<button onClick={()=>rmStk(lid,i)} style={xb}>×</button>}
                     </div>
                   );
@@ -361,18 +361,18 @@ function StockPanel({stocks,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
                     <input value={nf.t} onChange={e=>setNf({...nf,t:e.target.value})} placeholder="代码" style={{...inp,width:50}}/>
                     <input value={nf.n} onChange={e=>setNf({...nf,n:e.target.value})} placeholder="名称" style={{...inp,flex:1}}/>
                     <select value={nf.m} onChange={e=>setNf({...nf,m:e.target.value})} style={sel}>{Object.keys(ML).map(k=><option key={k} value={k}>{ML[k]}</option>)}</select>
-                    <button onClick={()=>{if(nf.t&&nf.n){addStk(lid,{t:nf.t,n:nf.n,m:nf.m,p:0,c:0});setNf({t:"",n:"",m:"US"});setAddTo(null);}}} style={{...btn,background:"#D4A03C",color:"#080B10",fontSize:9,padding:"2px 6px"}}>加</button>
-                    <button onClick={()=>setAddTo(null)} style={{...btn,color:"#4A5A6A",fontSize:9,padding:"2px 4px",background:"transparent"}}>×</button>
+                    <button onClick={()=>{if(nf.t&&nf.n){addStk(lid,{t:nf.t,n:nf.n,m:nf.m,p:0,c:0});setNf({t:"",n:"",m:"US"});setAddTo(null);}}} style={{...btn,background:"#d97757",color:"#faf9f5",fontSize:9,padding:"2px 6px"}}>加</button>
+                    <button onClick={()=>setAddTo(null)} style={{...btn,color:"#6e6c66",fontSize:9,padding:"2px 4px",background:"transparent"}}>×</button>
                   </div>
                 ):edit?(
-                  <div style={{padding:"2px 0"}}><button onClick={()=>{setAddTo(lid);setNf({t:"",n:"",m:"US"});}} style={{border:"none",background:"transparent",color:"#3A5A7A",fontSize:9,cursor:"pointer",fontFamily:"inherit"}}>+ 添加</button></div>
+                  <div style={{padding:"2px 0"}}><button onClick={()=>{setAddTo(lid);setNf({t:"",n:"",m:"US"});}} style={{border:"none",background:"transparent",color:"#6a9bcc",fontSize:9,cursor:"pointer",fontFamily:"inherit"}}>+ 添加</button></div>
                 ):null}
               </div>
             )}
           </div>
         );
       })}
-      <div style={{fontSize:9,color:"#1A2434",textAlign:"center",marginTop:8}}>Finnhub · 新浪财经 · 5min自动刷新</div>
+      <div style={{fontSize:9,color:"#d8d5cc",textAlign:"center",marginTop:8}}>Finnhub · 新浪财经 · 5min自动刷新</div>
     </div>
   );
 }
@@ -390,63 +390,63 @@ function Radar({layers,tx,scan,setTmp,setSS,addTx,rmTx,rmSig,onScan}){
   return(
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-        <div><div style={{fontSize:14,fontWeight:700,color:"#DEE4EA"}}>温度雷达</div><div style={sub}>模块一 · {scan||"未扫描"}</div></div>
+        <div><div style={{fontSize:14,fontWeight:700,color:"#141413"}}>温度雷达</div><div style={sub}>模块一 · {scan||"未扫描"}</div></div>
         <div style={{display:"flex",gap:3}}>
-          <button onClick={()=>setEdit(!edit)} style={edit?{...btn,background:"#D4A03C",color:"#080B10"}:{...btn,background:"#141A26",color:"#6A7A8A"}}>{edit?"完成":"编辑"}</button>
-          <button onClick={onScan} style={{...btn,background:"#141A26",color:"#6A7A8A"}}>扫描</button>
+          <button onClick={()=>setEdit(!edit)} style={edit?{...btn,background:"#d97757",color:"#faf9f5"}:{...btn,background:"#e8e6dc",color:"#8a8880"}}>{edit?"完成":"编辑"}</button>
+          <button onClick={onScan} style={{...btn,background:"#e8e6dc",color:"#8a8880"}}>扫描</button>
         </div>
       </div>
       <div style={{display:"flex",gap:10,marginBottom:5}}>
-        {Object.entries(TC).map(([k,v])=><div key={k} style={{display:"flex",alignItems:"center",gap:2,fontSize:9,color:"#3A4A5A"}}><span style={{width:6,height:6,borderRadius:"50%",background:v.c}}/>{v.l}</div>)}
+        {Object.entries(TC).map(([k,v])=><div key={k} style={{display:"flex",alignItems:"center",gap:2,fontSize:9,color:"#8a8880"}}><span style={{width:6,height:6,borderRadius:"50%",background:v.c}}/>{v.l}</div>)}
       </div>
-      {tx.length>0&&<div style={{padding:"4px 8px",background:"#0D1118",borderRadius:2,marginBottom:4}}>
-        <div style={{fontSize:8,color:"#3A4A5A",fontWeight:700}}>传导信号</div>
+      {tx.length>0&&<div style={{padding:"4px 8px",background:"#f0ede4",borderRadius:2,marginBottom:4}}>
+        <div style={{fontSize:8,color:"#8a8880",fontWeight:700}}>传导信号</div>
         {tx.map((x,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:4,marginTop:1}}>
-          <span style={{color:"#D4A03C",fontFamily:"monospace",fontWeight:700,fontSize:10}}>{x.f}→{x.t}</span>
-          <span style={{flex:1,color:"#6A7A8A",fontSize:10}}>{x.n}</span>
+          <span style={{color:"#d97757",fontFamily:"monospace",fontWeight:700,fontSize:10}}>{x.f}→{x.t}</span>
+          <span style={{flex:1,color:"#8a8880",fontSize:10}}>{x.n}</span>
           {edit&&<button onClick={()=>rmTx(i)} style={xb}>×</button>}
         </div>)}
       </div>}
       {edit&&<div style={{marginBottom:4}}>
-        <button onClick={()=>setTxE(!txE)} style={{...btn,width:"100%",background:"#0D1118",color:"#4A5A6A",fontSize:9}}>{txE?"关闭":"+ 传导"}</button>
+        <button onClick={()=>setTxE(!txE)} style={{...btn,width:"100%",background:"#f0ede4",color:"#6e6c66",fontSize:9}}>{txE?"关闭":"+ 传导"}</button>
         {txE&&<div style={{display:"flex",gap:3,marginTop:3,flexWrap:"wrap"}}>
           <select value={txF} onChange={e=>setTxF(e.target.value)} style={{...sel,width:48}}>{LI.map(l=><option key={l} value={l}>{l}</option>)}</select>
-          <span style={{color:"#D4A03C",fontWeight:700,lineHeight:"22px"}}>→</span>
+          <span style={{color:"#d97757",fontWeight:700,lineHeight:"22px"}}>→</span>
           <select value={txT} onChange={e=>setTxT(e.target.value)} style={{...sel,width:48}}>{LI.map(l=><option key={l} value={l}>{l}</option>)}</select>
           <input value={txN} onChange={e=>setTxN(e.target.value)} placeholder="描述" style={{...inp,flex:1}}/>
-          <button onClick={()=>{if(txN.trim()){addTx(txF,txT,txN.trim());setTxN("");}}} style={{...btn,background:"#D4A03C",color:"#080B10",fontSize:9}}>加</button>
+          <button onClick={()=>{if(txN.trim()){addTx(txF,txT,txN.trim());setTxN("");}}} style={{...btn,background:"#d97757",color:"#faf9f5",fontSize:9}}>加</button>
         </div>}
       </div>}
       <div style={{display:"flex",flexDirection:"column",gap:1}}>
         {dl.map(l=>{
           const tc=TC[l.t];const isE=exp===l.id;
           return <div key={l.id}>
-            <div onClick={()=>setExp(isE?null:l.id)} style={{display:"flex",alignItems:"center",padding:"4px 8px",cursor:"pointer",borderLeft:"2px solid "+tc.c,background:isE?"rgba("+parseInt(tc.c.slice(1,3),16)+","+parseInt(tc.c.slice(3,5),16)+","+parseInt(tc.c.slice(5,7),16)+",0.06)":"#0D1118"}}>
-              <span style={{fontFamily:"monospace",fontSize:9,color:"#3A4A5A",width:22,fontWeight:600}}>{l.id}</span>
-              <span style={{fontSize:11,fontWeight:600,color:"#C8D0DA",flex:1}}>{LN[l.id]}</span>
-              {l.sig.length>0&&<span style={{fontSize:8,color:"#3A4A5A",marginRight:4}}>{l.sig.length}</span>}
+            <div onClick={()=>setExp(isE?null:l.id)} style={{display:"flex",alignItems:"center",padding:"4px 8px",cursor:"pointer",borderLeft:"2px solid "+tc.c,background:isE?"rgba("+parseInt(tc.c.slice(1,3),16)+","+parseInt(tc.c.slice(3,5),16)+","+parseInt(tc.c.slice(5,7),16)+",0.06)":"#f0ede4"}}>
+              <span style={{fontFamily:"monospace",fontSize:9,color:"#8a8880",width:22,fontWeight:600}}>{l.id}</span>
+              <span style={{fontSize:11,fontWeight:600,color:"#1a1917",flex:1}}>{LN[l.id]}</span>
+              {l.sig.length>0&&<span style={{fontSize:8,color:"#8a8880",marginRight:4}}>{l.sig.length}</span>}
               {edit?<div style={{display:"flex",gap:1}} onClick={e=>e.stopPropagation()}>
-                {["cold","warm","hot"].map(t=><button key={t} onClick={()=>setTmp(l.id,t)} style={{border:"none",borderRadius:2,padding:"1px 5px",fontSize:8,cursor:"pointer",fontWeight:600,background:l.t===t?TC[t].c:"#1A2233",color:l.t===t?"#FFF":"#3A4A5A",fontFamily:"inherit"}}>{TC[t].l}</button>)}
+                {["cold","warm","hot"].map(t=><button key={t} onClick={()=>setTmp(l.id,t)} style={{border:"none",borderRadius:2,padding:"1px 5px",fontSize:8,cursor:"pointer",fontWeight:600,background:l.t===t?TC[t].c:"#e0ddd4",color:l.t===t?"#ffffff":"#8a8880",fontFamily:"inherit"}}>{TC[t].l}</button>)}
               </div>:<>
                 <span style={{width:6,height:6,borderRadius:"50%",background:tc.c,marginRight:3}}/>
                 <span style={{fontSize:10,color:tc.c,fontWeight:600}}>{tc.l}</span>
               </>}
-              <span style={{fontSize:8,color:"#2A3444",marginLeft:4,display:"inline-block",transform:isE?"rotate(180deg)":"none",transition:"transform 0.1s"}}>▾</span>
+              <span style={{fontSize:8,color:"#b0aea5",marginLeft:4,display:"inline-block",transform:isE?"rotate(180deg)":"none",transition:"transform 0.1s"}}>▾</span>
             </div>
-            {isE&&<div style={{background:"#090D14",borderLeft:"2px solid "+tc.c,padding:"4px 8px 6px 30px"}}>
-              <div style={{fontSize:8,color:"#3A4A5A",fontWeight:700,marginBottom:2}}>细分</div>
+            {isE&&<div style={{background:"#f0ede4",borderLeft:"2px solid "+tc.c,padding:"4px 8px 6px 30px"}}>
+              <div style={{fontSize:8,color:"#8a8880",fontWeight:700,marginBottom:2}}>细分</div>
               {l.ss.map((ss,si)=><div key={si} style={{display:"flex",alignItems:"center",gap:3,fontSize:10,marginBottom:1}}>
                 <span style={{width:4,height:4,borderRadius:"50%",background:TC[ss.s].c}}/>
-                <span style={{color:"#6A7A8A",flex:1}}>{ss.n}</span>
-                {edit?<div style={{display:"flex",gap:1}}>{["cold","warm","hot"].map(t=><button key={t} onClick={()=>setSS(l.id,si,t)} style={{border:"none",borderRadius:1,padding:"0 4px",fontSize:7,cursor:"pointer",fontWeight:600,background:ss.s===t?TC[t].c:"#1A2233",color:ss.s===t?"#FFF":"#3A4A5A",fontFamily:"inherit"}}>{TC[t].l}</button>)}</div>
+                <span style={{color:"#8a8880",flex:1}}>{ss.n}</span>
+                {edit?<div style={{display:"flex",gap:1}}>{["cold","warm","hot"].map(t=><button key={t} onClick={()=>setSS(l.id,si,t)} style={{border:"none",borderRadius:1,padding:"0 4px",fontSize:7,cursor:"pointer",fontWeight:600,background:ss.s===t?TC[t].c:"#e0ddd4",color:ss.s===t?"#ffffff":"#8a8880",fontFamily:"inherit"}}>{TC[t].l}</button>)}</div>
                 :<span style={{fontSize:8,color:TC[ss.s].c}}>{TC[ss.s].l}</span>}
               </div>)}
-              <div style={{marginTop:4,fontSize:8,color:"#3A4A5A",fontWeight:700}}>信号</div>
-              {l.sig.length===0&&<div style={{fontSize:9,color:"#2A3444"}}>暂无</div>}
+              <div style={{marginTop:4,fontSize:8,color:"#8a8880",fontWeight:700}}>信号</div>
+              {l.sig.length===0&&<div style={{fontSize:9,color:"#b0aea5"}}>暂无</div>}
               {l.sig.map((s,si)=><div key={si} style={{display:"flex",gap:3,marginBottom:1,alignItems:"center"}}>
-                <span style={{fontSize:8,color:"#2A3444"}}>{s.dt}</span>
-                <span style={{flex:1,fontSize:9,color:"#6A7A8A"}}>{s.tx}</span>
-                <span style={{fontSize:7,color:"#2A3444"}}>[{s.sr}]</span>
+                <span style={{fontSize:8,color:"#b0aea5"}}>{s.dt}</span>
+                <span style={{flex:1,fontSize:9,color:"#8a8880"}}>{s.tx}</span>
+                <span style={{fontSize:7,color:"#b0aea5"}}>[{s.sr}]</span>
                 {edit&&<button onClick={()=>rmSig(l.id,si)} style={xb}>×</button>}
               </div>)}
             </div>}
@@ -464,38 +464,38 @@ function Feed({items,pushSig,dismiss}){
   const fl=items.filter(i=>(ft==="all"||i.st===ft)&&(lf==="all"||i.ai.ly.includes(lf)));
 
   return <div>
-    <div style={{fontSize:14,fontWeight:700,color:"#DEE4EA",marginBottom:2}}>信息聚合</div>
+    <div style={{fontSize:14,fontWeight:700,color:"#141413",marginBottom:2}}>信息聚合</div>
     <div style={sub}>模块三 · AI分类 → 推送至雷达</div>
     <div style={{display:"flex",justifyContent:"space-between",marginTop:6,marginBottom:6,flexWrap:"wrap",gap:4}}>
       <div style={{display:"flex",gap:2}}>
         {[["pending","待确认"],["unread","未读"],["confirmed","已推送"],["all","全部"]].map(([k,v])=>
-          <button key={k} onClick={()=>setFt(k)} style={ft===k?{...fb,background:"#1A2636",color:"#D4A03C"}:fb}>{v}</button>
+          <button key={k} onClick={()=>setFt(k)} style={ft===k?{...fb,background:"#e8e6dc",color:"#d97757"}:fb}>{v}</button>
         )}
       </div>
       <select value={lf} onChange={e=>setLf(e.target.value)} style={sel}><option value="all">全部</option>{LI.map(l=><option key={l} value={l}>{l}</option>)}</select>
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:4}}>
-      {fl.length===0&&<div style={{textAlign:"center",color:"#2A3444",padding:14}}>暂无</div>}
+      {fl.length===0&&<div style={{textAlign:"center",color:"#b0aea5",padding:14}}>暂无</div>}
       {fl.map(it=>{
-        const ic=it.ai.imp==="high"?"#C9503C":it.ai.imp==="med"?"#D4A03C":"#4A6FA5";
-        return <div key={it.id} style={{background:"#0D1118",borderRadius:2,padding:"7px 10px",borderLeft:"2px solid "+ic,opacity:it.st==="dismissed"?0.3:1}}>
+        const ic=it.ai.imp==="high"?"#c0392b":it.ai.imp==="med"?"#d97757":"#6a9bcc";
+        return <div key={it.id} style={{background:"#f0ede4",borderRadius:2,padding:"7px 10px",borderLeft:"2px solid "+ic,opacity:it.st==="dismissed"?0.3:1}}>
           <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:3,marginBottom:2}}>
             <div style={{display:"flex",alignItems:"center",gap:4}}>
               <span style={{width:5,height:5,borderRadius:"50%",background:ic}}/>
-              <span style={{fontSize:10,color:"#4A6A8A",fontWeight:600}}>{it.src}</span>
-              <span style={{fontSize:9,color:"#2A3444"}}>{it.dt}</span>
+              <span style={{fontSize:10,color:"#6a9bcc",fontWeight:600}}>{it.src}</span>
+              <span style={{fontSize:9,color:"#b0aea5"}}>{it.dt}</span>
             </div>
             <div style={{display:"flex",gap:2}}>
-              {it.ai.ly.map(l=><span key={l} style={{fontSize:8,color:"#D4A03C",background:"rgba(212,160,60,0.08)",padding:"0 4px",borderRadius:1,fontFamily:"monospace",fontWeight:600}}>{l}</span>)}
+              {it.ai.ly.map(l=><span key={l} style={{fontSize:8,color:"#d97757",background:"rgba(217,119,87,0.10)",padding:"0 4px",borderRadius:1,fontFamily:"monospace",fontWeight:600}}>{l}</span>)}
             </div>
           </div>
-          <div style={{fontSize:12,fontWeight:600,color:"#DEE4EA",lineHeight:1.3,marginBottom:2}}>{it.tl}</div>
-          <div style={{fontSize:10,color:"#5A6A7A",marginBottom:4}}>{it.ai.sm}</div>
+          <div style={{fontSize:12,fontWeight:600,color:"#141413",lineHeight:1.3,marginBottom:2}}>{it.tl}</div>
+          <div style={{fontSize:10,color:"#6e6c66",marginBottom:4}}>{it.ai.sm}</div>
           {(it.st==="pending"||it.st==="unread")&&<div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-            {it.ai.ly.map(l=><button key={l} onClick={()=>pushSig(it.id,l)} style={{border:"none",background:"rgba(212,160,60,0.1)",color:"#D4A03C",fontSize:9,padding:"2px 7px",borderRadius:2,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}}>→{l}</button>)}
-            <button onClick={()=>dismiss(it.id)} style={{border:"none",background:"transparent",color:"#2A3A4A",fontSize:9,cursor:"pointer",fontFamily:"inherit"}}>忽略</button>
+            {it.ai.ly.map(l=><button key={l} onClick={()=>pushSig(it.id,l)} style={{border:"none",background:"rgba(217,119,87,0.12)",color:"#d97757",fontSize:9,padding:"2px 7px",borderRadius:2,cursor:"pointer",fontWeight:600,fontFamily:"inherit"}}>→{l}</button>)}
+            <button onClick={()=>dismiss(it.id)} style={{border:"none",background:"transparent",color:"#b0aea5",fontSize:9,cursor:"pointer",fontFamily:"inherit"}}>忽略</button>
           </div>}
-          {it.st==="confirmed"&&<span style={{fontSize:9,color:"#4A9A5A",fontWeight:600}}>✓ {it.cL}</span>}
+          {it.st==="confirmed"&&<span style={{fontSize:9,color:"#788c5d",fontWeight:600}}>✓ {it.cL}</span>}
         </div>;
       })}
     </div>
@@ -511,10 +511,10 @@ function Sources({sources,addSrc,rmSrc}){
 
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-      <div><div style={{fontSize:16,fontWeight:700,color:"#DEE4EA"}}>信源管理</div><div style={{fontSize:10,color:"#3A4A5A"}}>{sources.length}个信源</div></div>
-      <button onClick={()=>setAdding(!adding)} style={{...btn,background:adding?"#9A3A3A":"#D4A03C",color:"#080B10"}}>{adding?"取消":"+ 添加"}</button>
+      <div><div style={{fontSize:16,fontWeight:700,color:"#141413"}}>信源管理</div><div style={{fontSize:10,color:"#8a8880"}}>{sources.length}个信源</div></div>
+      <button onClick={()=>setAdding(!adding)} style={{...btn,background:adding?"#c0392b":"#d97757",color:"#faf9f5"}}>{adding?"取消":"+ 添加"}</button>
     </div>
-    {adding&&<div style={{background:"#0D1118",borderRadius:3,padding:8,marginBottom:10,border:"1px solid #1A2233"}}>
+    {adding&&<div style={{background:"#f0ede4",borderRadius:3,padding:8,marginBottom:10,border:"1px solid #1A2233"}}>
       <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:4}}>
         <input value={nf.n} onChange={e=>setNf({...nf,n:e.target.value})} placeholder="名称" style={{...inp,flex:1,minWidth:100}}/>
         <input value={nf.u} onChange={e=>setNf({...nf,u:e.target.value})} placeholder="URL" style={{...inp,flex:2,minWidth:160}}/>
@@ -524,20 +524,20 @@ function Sources({sources,addSrc,rmSrc}){
         <select value={nf.cat} onChange={e=>setNf({...nf,cat:e.target.value})} style={sel}><option value="must">必读</option><option value="opt">选读</option></select>
         <select value={nf.ly} onChange={e=>setNf({...nf,ly:e.target.value})} style={sel}>{LI.map(l=><option key={l} value={l}>{l}</option>)}</select>
         <input value={nf.fq} onChange={e=>setNf({...nf,fq:e.target.value})} placeholder="频率" style={{...inp,width:40}}/>
-        <button onClick={()=>{if(nf.n.trim()){addSrc({n:nf.n,u:nf.u,lg:nf.lg,cat:nf.cat,ly:[nf.ly],fq:nf.fq});setNf({n:"",u:"",lg:"en",cat:"opt",ly:"L1",fq:"周"});setAdding(false);}}} style={{...btn,background:"#D4A03C",color:"#080B10"}}>确认</button>
+        <button onClick={()=>{if(nf.n.trim()){addSrc({n:nf.n,u:nf.u,lg:nf.lg,cat:nf.cat,ly:[nf.ly],fq:nf.fq});setNf({n:"",u:"",lg:"en",cat:"opt",ly:"L1",fq:"周"});setAdding(false);}}} style={{...btn,background:"#d97757",color:"#faf9f5"}}>确认</button>
       </div>
     </div>}
     {LI.map(lid=>{
       const srcs=byL[lid];if(!srcs)return null;
       return <div key={lid} style={{marginBottom:10}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#4A6A8A",borderBottom:"1px solid #141A26",paddingBottom:2,marginBottom:3}}>{lid} {LN[lid]}</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#6a9bcc",borderBottom:"1px solid #141A26",paddingBottom:2,marginBottom:3}}>{lid} {LN[lid]}</div>
         {srcs.map(s=><div key={s.id} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 0",borderBottom:"1px solid #0C1018"}}>
-          <span style={{width:5,height:5,borderRadius:"50%",background:s.cat==="must"?"#D4A03C":"#2A3A4A"}}/>
-          <span style={{fontSize:12,color:s.cat==="must"?"#C0CCD8":"#5A6A7A",flex:1,fontWeight:s.cat==="must"?600:400}}>{s.n}</span>
-          <span style={{fontSize:9,color:"#3A4A5A"}}>{s.lg==="zh"?"中":"EN"}</span>
-          <span style={{fontSize:9,color:"#3A4A5A"}}>{s.fq}</span>
-          <span style={{fontSize:9,color:s.cat==="must"?"#D4A03C":"#3A4A5A"}}>{s.cat==="must"?"必读":"选读"}</span>
-          {s.u&&s.u!=="wechat"&&<a href={s.u.startsWith("http")?s.u:"https://"+s.u} target="_blank" rel="noopener noreferrer" style={{fontSize:10,color:"#4A6FA5",textDecoration:"none"}}>↗</a>}
+          <span style={{width:5,height:5,borderRadius:"50%",background:s.cat==="must"?"#d97757":"#b0aea5"}}/>
+          <span style={{fontSize:12,color:s.cat==="must"?"#1a1917":"#6e6c66",flex:1,fontWeight:s.cat==="must"?600:400}}>{s.n}</span>
+          <span style={{fontSize:9,color:"#8a8880"}}>{s.lg==="zh"?"中":"EN"}</span>
+          <span style={{fontSize:9,color:"#8a8880"}}>{s.fq}</span>
+          <span style={{fontSize:9,color:s.cat==="must"?"#d97757":"#8a8880"}}>{s.cat==="must"?"必读":"选读"}</span>
+          {s.u&&s.u!=="wechat"&&<a href={s.u.startsWith("http")?s.u:"https://"+s.u} target="_blank" rel="noopener noreferrer" style={{fontSize:10,color:"#6a9bcc",textDecoration:"none"}}>↗</a>}
           <button onClick={()=>rmSrc(s.id)} style={xb}>×</button>
         </div>)}
       </div>;
@@ -546,12 +546,12 @@ function Sources({sources,addSrc,rmSrc}){
 }
 
 // ===== SHARED STYLES =====
-const sub = {fontSize:9,color:"#3A4A5A"};
+const sub = {fontSize:9,color:"#8a8880"};
 const btn = {border:"none",borderRadius:3,padding:"4px 10px",fontSize:10,cursor:"pointer",fontWeight:600,fontFamily:"inherit"};
-const bN = {border:"none",background:"transparent",color:"#3A4A5A",fontSize:11,padding:"5px 12px",borderRadius:3,cursor:"pointer",fontFamily:"inherit",position:"relative"};
-const bA = {...bN,background:"#141A26",color:"#DEE4EA"};
-const bdg = {position:"absolute",top:0,right:2,background:"#C9503C",color:"#FFF",fontSize:7,fontWeight:700,borderRadius:4,padding:"0 3px"};
-const inp = {background:"#080B10",border:"1px solid #1A2233",borderRadius:2,padding:"3px 6px",color:"#A0AABA",fontSize:10,fontFamily:"inherit",outline:"none"};
-const sel = {background:"#0D1118",border:"1px solid #1A2233",borderRadius:2,padding:"3px 5px",color:"#A0AABA",fontSize:10,fontFamily:"inherit",outline:"none"};
-const fb = {border:"none",background:"#0D1118",color:"#3A4A5A",fontSize:9,padding:"2px 7px",borderRadius:2,cursor:"pointer",fontFamily:"inherit"};
-const xb = {border:"none",background:"transparent",color:"#7A3A3A",cursor:"pointer",fontSize:12,padding:"0 2px",fontFamily:"inherit"};
+const bN = {border:"none",background:"transparent",color:"#8a8880",fontSize:11,padding:"5px 12px",borderRadius:3,cursor:"pointer",fontFamily:"inherit",position:"relative"};
+const bA = {...bN,background:"#e8e6dc",color:"#141413"};
+const bdg = {position:"absolute",top:0,right:2,background:"#c0392b",color:"#ffffff",fontSize:7,fontWeight:700,borderRadius:4,padding:"0 3px"};
+const inp = {background:"#ffffff",border:"1px solid #e0ddd4",borderRadius:2,padding:"3px 6px",color:"#3d3c39",fontSize:10,fontFamily:"inherit",outline:"none"};
+const sel = {background:"#f0ede4",border:"1px solid #e0ddd4",borderRadius:2,padding:"3px 5px",color:"#3d3c39",fontSize:10,fontFamily:"inherit",outline:"none"};
+const fb = {border:"none",background:"#f0ede4",color:"#8a8880",fontSize:9,padding:"2px 7px",borderRadius:2,cursor:"pointer",fontFamily:"inherit"};
+const xb = {border:"none",background:"transparent",color:"#a93226",cursor:"pointer",fontSize:12,padding:"0 2px",fontFamily:"inherit"};
