@@ -48,9 +48,9 @@ function sinaQuote(ticker, market){
       const parts = m[1].split(",");
       let price, prevClose;
       if(market==="HK"){
-        // 港股格式: 英文名,中文名,昨收,今开,最高,最低,现价,...
+        // 港股格式: 英文名,中文名,今开,昨收,最高,最低,现价,涨跌额,涨跌幅%,...
         price = parseFloat(parts[6]);
-        prevClose = parseFloat(parts[2]);
+        prevClose = parseFloat(parts[3]); // parts[3]=昨收，parts[2]=今开（之前取错了）
       } else if(market==="A"){
         // A股格式: 名称,今开,昨收,现价,...
         price = parseFloat(parts[3]);
