@@ -18,75 +18,68 @@ function finnhubQuote(symbol){
     .catch(()=>null);
 }
 
-// 新浪财经：支持 A股(sz/sh前缀)、港股(hk前缀)、美股(gb_前缀)、台股(tw前缀)
+// 新浪财经：支持 A股(sz/sh前缀)、港股(hk前缀)、台股(tw前缀)
 // 代码映射规则：
 //   A股: 6开头→sh，其他→sz
-//   港股: 5位数字→hk{code}
+//   港股: 保留前导零，hk前缀（如 01860 → hk01860）
 //   台股: 4位数字→tw{code}
-//   韩股: 6位数字→kr{code}（新浪不支持，跳过）
+//   韩股: 新浪不支持，跳过
 function sinaCode(ticker, market){
   if(market==="A"){
     return ticker.startsWith("6") ? `sh${ticker}` : `sz${ticker}`;
   }
-  if(market==="HK") return `hk${ticker.replace(/^0+/,'')}`;  // 去前导0
+  // 港股必须保留前导零，新浪接口要求5位 hk01860 格式
+  if(market==="HK") return `hk${ticker.padStart(5,"0")}`;
   if(market==="TW") return `tw${ticker}`;
   return null;
 }
 
+// 新浪行情拉取：使用 <script> 标签加载，绕过 CORS 限制
+// 新浪返回 var hq_str_xx="..." 格式的 JS，script 加载后写入 window 变量
 function sinaQuote(ticker, market){
   const code = sinaCode(ticker, market);
   if(!code) return Promise.resolve(null);
+  const varName = `hq_str_${code}`;
   return new Promise((resolve)=>{
-    const cbName = `_sina_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    // 清理旧的 window 变量，避免读到缓存数据
+    delete window[varName];
     const script = document.createElement("script");
     const timer = setTimeout(()=>{
-      delete window[cbName];
-      document.body.removeChild(script);
+      try{ document.head.removeChild(script); }catch(e){}
       resolve(null);
     }, 8000);
-    // 新浪直接返回 var hq_str_xxx="..." 格式，用 fetch 解析更可靠
-    fetch(`https://hq.sinajs.cn/list=${code}`, {
-      headers:{ Referer:"https://finance.sina.com.cn" }
-    })
-    .then(r=>r.text())
-    .then(txt=>{
+    script.onload = ()=>{
       clearTimeout(timer);
-      delete window[cbName];
-      document.body.removeChild(script);
-      // 解析: var hq_str_sh600000="浦发银行,10.10,10.08,10.05,..."
-      const m = txt.match(/"([^"]+)"/);
-      if(!m||!m[1]) return resolve(null);
-      const parts = m[1].split(",");
+      try{ document.head.removeChild(script); }catch(e){}
+      const raw = window[varName];
+      if(!raw) return resolve(null);
+      // 解析: "名称,字段1,字段2,..."
+      const parts = raw.split(",");
+      let price, prevClose;
       if(market==="HK"){
-        // 港股格式：名称,昨收,今开,最高,最低,现价,...
-        const price = parseFloat(parts[6]);
-        const prevClose = parseFloat(parts[3]);
-        if(!price||!prevClose) return resolve(null);
-        const chg = +((price-prevClose)/prevClose*100).toFixed(2);
-        resolve({p:price, c:chg});
+        // 港股格式: 英文名,中文名,昨收,今开,最高,最低,现价,...
+        price = parseFloat(parts[6]);
+        prevClose = parseFloat(parts[2]);
       } else if(market==="A"){
-        // A股: 名称,今开,昨收,现价,...
-        const price = parseFloat(parts[3]);
-        const prevClose = parseFloat(parts[2]);
-        if(!price||!prevClose) return resolve(null);
-        const chg = +((price-prevClose)/prevClose*100).toFixed(2);
-        resolve({p:price, c:chg});
+        // A股格式: 名称,今开,昨收,现价,...
+        price = parseFloat(parts[3]);
+        prevClose = parseFloat(parts[2]);
       } else if(market==="TW"){
-        const price = parseFloat(parts[6]);
-        const prevClose = parseFloat(parts[3]);
-        if(!price||!prevClose) return resolve(null);
-        const chg = +((price-prevClose)/prevClose*100).toFixed(2);
-        resolve({p:price, c:chg});
-      } else {
-        resolve(null);
+        price = parseFloat(parts[6]);
+        prevClose = parseFloat(parts[3]);
       }
-    })
-    .catch(()=>{
+      if(!price||!prevClose) return resolve(null);
+      const chg = +((price-prevClose)/prevClose*100).toFixed(2);
+      resolve({p:price, c:chg});
+    };
+    script.onerror = ()=>{
       clearTimeout(timer);
-      try{ document.body.removeChild(script); }catch(e){}
+      try{ document.head.removeChild(script); }catch(e){}
       resolve(null);
-    });
-    document.body.appendChild(script);
+    };
+    // script 标签加载跨域 JS 不受 CORS 限制
+    script.src = `https://hq.sinajs.cn/list=${code}`;
+    document.head.appendChild(script);
   });
 }
 
