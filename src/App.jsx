@@ -34,27 +34,18 @@ function sinaCode(ticker, market){
   return null;
 }
 
-// 新浪行情拉取：使用 <script> 标签加载，绕过 CORS 限制
-// 新浪返回 var hq_str_xx="..." 格式的 JS，script 加载后写入 window 变量
+// 新浪行情拉取：通过自建 Vercel serverless 代理 /api/quote 请求
+// 代理服务端转发，不受 CORS/Origin 限制
 function sinaQuote(ticker, market){
   const code = sinaCode(ticker, market);
   if(!code) return Promise.resolve(null);
-  const varName = `hq_str_${code}`;
-  return new Promise((resolve)=>{
-    // 清理旧的 window 变量，避免读到缓存数据
-    delete window[varName];
-    const script = document.createElement("script");
-    const timer = setTimeout(()=>{
-      try{ document.head.removeChild(script); }catch(e){}
-      resolve(null);
-    }, 8000);
-    script.onload = ()=>{
-      clearTimeout(timer);
-      try{ document.head.removeChild(script); }catch(e){}
-      const raw = window[varName];
-      if(!raw) return resolve(null);
-      // 解析: "名称,字段1,字段2,..."
-      const parts = raw.split(",");
+  return fetch(`/api/quote?codes=${code}`)
+    .then(r => r.text())
+    .then(txt => {
+      // 解析: var hq_str_xx="名称,字段1,字段2,..."
+      const m = txt.match(/"([^"]+)"/);
+      if(!m || !m[1]) return null;
+      const parts = m[1].split(",");
       let price, prevClose;
       if(market==="HK"){
         // 港股格式: 英文名,中文名,昨收,今开,最高,最低,现价,...
@@ -68,19 +59,11 @@ function sinaQuote(ticker, market){
         price = parseFloat(parts[6]);
         prevClose = parseFloat(parts[3]);
       }
-      if(!price||!prevClose) return resolve(null);
-      const chg = +((price-prevClose)/prevClose*100).toFixed(2);
-      resolve({p:price, c:chg});
-    };
-    script.onerror = ()=>{
-      clearTimeout(timer);
-      try{ document.head.removeChild(script); }catch(e){}
-      resolve(null);
-    };
-    // script 标签加载跨域 JS 不受 CORS 限制
-    script.src = `https://hq.sinajs.cn/list=${code}`;
-    document.head.appendChild(script);
-  });
+      if(!price || !prevClose) return null;
+      const chg = +((price - prevClose) / prevClose * 100).toFixed(2);
+      return {p: price, c: chg};
+    })
+    .catch(() => null);
 }
 
 // 对所有股票并发拉取，返回 {ticker_market: {p, c}} 映射
