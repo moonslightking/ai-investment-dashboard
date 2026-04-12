@@ -96,6 +96,7 @@ const LN = {L0:"能源层",L1:"芯片层",L2:"基础设施层",L3:"模型与平�
 const TC = {cold:{l:"冷",c:"#6a9bcc"},warm:{l:"温",c:"#b75c3d"},hot:{l:"热",c:"#c0392b"}};
 const MC = {US:"#6a9bcc",HK:"#c0392b",A:"#b75c3d",TW:"#788c5d",KR:"#6a9bcc"};
 const ML = {US:"美",HK:"港",A:"A",TW:"台",KR:"韩"};
+const TAG_COLORS = ["#6a9bcc","#b75c3d","#788c5d","#8a6bb5","#c0854a","#5b8a8a"];
 
 function initStocks(){return{
   L0:[{t:"GEV",n:"GE Vernova",m:"US",p:398.5,c:2.1},{t:"CAT",n:"Caterpillar",m:"US",p:372.8,c:0.8},{t:"ETN",n:"Eaton",m:"US",p:312.4,c:1.5},{t:"VRT",n:"Vertiv",m:"US",p:128.6,c:3.2},{t:"300274",n:"阳光电源",m:"A",p:78.3,c:-1.2},{t:"300750",n:"宁德时代",m:"A",p:215.6,c:0.6},{t:"002916",n:"盛弘股份",m:"A",p:48.7,c:4.8},{t:"300443",n:"金盘科技",m:"A",p:42.1,c:2.3}],
@@ -163,7 +164,7 @@ function initLayers(){return[
   {id:"L8",t:"cold",sig:[],ss:mkSS(["AI搜索","AI消费助手","垂直应用","AI硬件"])},
 ];}
 
-function initData(){return{layers:initLayers(),tx:[],scan:null,stocks:initStocks(),items:initItems(),sources:initSources()};}
+function initData(){return{layers:initLayers(),tx:[],scan:null,stocks:initStocks(),items:initItems(),sources:initSources(),tagDefs:[]};}
 
 function loadD(){
   try{const r=localStorage.getItem("ai-dash-data");return r?JSON.parse(r):null;}
@@ -182,7 +183,16 @@ export default function App(){
 
   useEffect(()=>{
     const saved=loadD();
-    if(saved && saved.layers && saved.stocks){setD(saved);}
+    if(saved && saved.layers && saved.stocks){
+      // 兼容迁移：补全 tagDefs 和每个股票的 tags 字段
+      if(!saved.tagDefs) saved.tagDefs = [];
+      for(const lid of LI){
+        if(saved.stocks[lid]){
+          saved.stocks[lid] = saved.stocks[lid].map(s=>({...s, tags: s.tags||[]}));
+        }
+      }
+      setD(saved);
+    }
     setReady(true);
   },[]);
 
@@ -232,8 +242,31 @@ export default function App(){
   const addTx=(f,t,n)=>P({...d,tx:[...d.tx,{f,t,n,dt:new Date().toISOString().slice(0,10)}]});
   const rmTx=(i)=>P({...d,tx:d.tx.filter((_,j)=>j!==i)});
   const rmSig=(lid,i)=>P({...d,layers:d.layers.map(l=>l.id===lid?{...l,sig:l.sig.filter((_,j)=>j!==i)}:l)});
-  const addStk=(lid,s)=>{const ns={...d.stocks,[lid]:[...(d.stocks[lid]||[]),s]};P({...d,stocks:ns});doFetch(ns);};
+  const addStk=(lid,s)=>{const ns={...d.stocks,[lid]:[...(d.stocks[lid]||[]),{...s,tags:[]}]};P({...d,stocks:ns});doFetch(ns);};
   const rmStk=(lid,i)=>P({...d,stocks:{...d.stocks,[lid]:d.stocks[lid].filter((_,j)=>j!==i)}});
+  // 标签 CRUD
+  const toggleStockTag=(lid,idx,tagName)=>{
+    const list=d.stocks[lid]||[];
+    const s=list[idx];
+    const tags=s.tags||[];
+    const newTags=tags.includes(tagName)?tags.filter(t=>t!==tagName):[...tags,tagName];
+    P({...d,stocks:{...d.stocks,[lid]:list.map((x,i)=>i===idx?{...x,tags:newTags}:x)}});
+  };
+  // 新建标签定义并立即应用到某个标的（原子操作，避免 setState 竞态）
+  const addTagDefAndApply=(lid,idx,name)=>{
+    const n=name.trim(); if(!n) return;
+    const existsDef=d.tagDefs.find(t=>t.name===n);
+    const newTagDefs=existsDef?d.tagDefs:[...d.tagDefs,{name:n,color:TAG_COLORS[d.tagDefs.length%TAG_COLORS.length]}];
+    const list=d.stocks[lid]||[];
+    const s=list[idx]; const tags=s.tags||[];
+    const newTags=tags.includes(n)?tags:[...tags,n];
+    P({...d,tagDefs:newTagDefs,stocks:{...d.stocks,[lid]:list.map((x,i)=>i===idx?{...x,tags:newTags}:x)}});
+  };
+  const rmTagDef=(name)=>{
+    const ns={};
+    for(const lid of LI){ns[lid]=(d.stocks[lid]||[]).map(s=>({...s,tags:(s.tags||[]).filter(t=>t!==name)}));}
+    P({...d,tagDefs:d.tagDefs.filter(t=>t.name!==name),stocks:ns});
+  };
   const addSrc=(s)=>P({...d,sources:[...d.sources,{...s,id:"s"+Date.now()}]});
   const rmSrc=(id)=>P({...d,sources:d.sources.filter(x=>x.id!==id)});
 
@@ -255,7 +288,7 @@ export default function App(){
       {pg==="main"?(
         <div style={{display:"flex",flexWrap:"wrap",alignItems:"flex-start"}}>
           <div style={{flex:"1 1 420px",minWidth:360,maxWidth:560,padding:16,borderRight:"1px solid #e0ddd6",overflowY:"auto",maxHeight:"calc(100vh - 48px)"}}>
-            <StockPanel stocks={d.stocks} addStk={addStk} rmStk={rmStk} quotes={quotes} qStatus={qStatus} qTime={qTime} onRefresh={()=>doFetch(d.stocks)}/>
+            <StockPanel stocks={d.stocks} tagDefs={d.tagDefs||[]} toggleStockTag={toggleStockTag} addTagDefAndApply={addTagDefAndApply} rmTagDef={rmTagDef} addStk={addStk} rmStk={rmStk} quotes={quotes} qStatus={qStatus} qTime={qTime} onRefresh={()=>doFetch(d.stocks)}/>
           </div>
           <div style={{flex:"1 1 460px",minWidth:380,padding:16,overflowY:"auto",maxHeight:"calc(100vh - 48px)"}}>
             <Radar layers={d.layers} tx={d.tx} scan={d.scan} setTmp={setTmp} setSS={setSS} addTx={addTx} rmTx={rmTx} rmSig={rmSig} onScan={()=>{const n=prompt("要点:");P({...d,scan:new Date().toISOString().slice(0,10)});}}/>
@@ -274,11 +307,23 @@ export default function App(){
 }
 
 // ===== STOCK PANEL (M2) =====
-function StockPanel({stocks,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
+function StockPanel({stocks,tagDefs,toggleStockTag,addTagDefAndApply,rmTagDef,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
   const[edit,setEdit]=useState(false);
   const[addTo,setAddTo]=useState(null);
   const[nf,setNf]=useState({t:"",n:"",m:"US"});
   const[collapsed,setCollapsed]=useState({});
+  const[tagOpen,setTagOpen]=useState(null);   // {lid,idx} | null
+  const[newTagInput,setNewTagInput]=useState("");
+
+  // 点击外部关闭标签下拉
+  useEffect(()=>{
+    if(!tagOpen) return;
+    const handler=(e)=>{
+      if(!e.target.closest("[data-tagdrop]")) setTagOpen(null);
+    };
+    document.addEventListener("mousedown",handler);
+    return ()=>document.removeEventListener("mousedown",handler);
+  },[tagOpen]);
 
   const qc = qStatus==="loading"?"#b75c3d":qStatus==="ok"?"#788c5d":qStatus==="err"?"#c0392b":"#8a8880";
   const ql = qStatus==="loading"?"拉取中…":qStatus==="ok"?`${qTime} 更新`:qStatus==="err"?"行情失败":"等待";
@@ -321,14 +366,66 @@ function StockPanel({stocks,addStk,rmStk,quotes,qStatus,qTime,onRefresh}){
                   const hasLive = !!quotes[`${s.t}_${s.m}`];
                   const cc=s.c>0?"#788c5d":s.c<0?"#c0392b":"#8a8880";
                   const dispP = s.p>0 ? (s.p>999?Math.round(s.p).toLocaleString():s.p) : "—";
+                  const stags = s.tags||[];
+                  const isTagOpen = tagOpen&&tagOpen.lid===lid&&tagOpen.idx===i;
                   return(
-                    <div key={i} style={{display:"flex",alignItems:"center",padding:"4px 0",borderBottom:"1px solid #e0ddd6",gap:5}}>
-                      <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:12,color:"#6e6c66",width:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.t}</span>
-                      <span style={{flex:1,color:"#2b2b2b",fontSize:13}}>{s.n}</span>
-                      <span style={{fontSize:10,padding:"1px 5px",borderRadius:4,background:(MC[s.m]||"#555")+"18",color:MC[s.m]||"#555",fontWeight:600}}>{ML[s.m]||s.m}</span>
-                      <span style={{width:64,textAlign:"right",fontFamily:"'SF Mono',Consolas,monospace",fontSize:13,color:hasLive?"#2b2b2b":"#8a8880"}}>{dispP}</span>
-                      <span style={{width:52,textAlign:"right",fontFamily:"'SF Mono',Consolas,monospace",fontSize:13,color:hasLive?cc:"#8a8880",fontWeight:600}}>{s.p>0?(s.c>0?"+":"")+s.c+"%":"—"}</span>
-                      {edit&&<button onClick={()=>rmStk(lid,i)} style={xb}>×</button>}
+                    <div key={i} style={{borderBottom:"1px solid #e0ddd6"}}>
+                      <div style={{display:"flex",alignItems:"center",padding:"4px 0",gap:5}}>
+                        <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:12,color:"#6e6c66",width:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.t}</span>
+                        <span style={{flex:1,color:"#2b2b2b",fontSize:13,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.n}</span>
+                        {/* 标签 pills（非编辑态：只读展示；编辑态同样可见） */}
+                        {stags.slice(0,2).map(tn=>{
+                          const td=tagDefs.find(x=>x.name===tn);
+                          const tc=td?td.color:"#8a8880";
+                          return <span key={tn} style={{fontSize:9,padding:"1px 4px",borderRadius:3,background:tc+"22",color:tc,fontWeight:700,whiteSpace:"nowrap",flexShrink:0}}>{tn}</span>;
+                        })}
+                        {stags.length>2&&<span style={{fontSize:9,color:"#b0aea5",flexShrink:0}}>+{stags.length-2}</span>}
+                        <span style={{fontSize:10,padding:"1px 5px",borderRadius:4,background:(MC[s.m]||"#555")+"18",color:MC[s.m]||"#555",fontWeight:600,flexShrink:0}}>{ML[s.m]||s.m}</span>
+                        <span style={{width:64,textAlign:"right",fontFamily:"'SF Mono',Consolas,monospace",fontSize:13,color:hasLive?"#2b2b2b":"#8a8880",flexShrink:0}}>{dispP}</span>
+                        <span style={{width:52,textAlign:"right",fontFamily:"'SF Mono',Consolas,monospace",fontSize:13,color:hasLive?cc:"#8a8880",fontWeight:600,flexShrink:0}}>{s.p>0?(s.c>0?"+":"")+s.c+"%":"—"}</span>
+                        {edit&&(
+                          <div style={{position:"relative",flexShrink:0}} data-tagdrop>
+                            <button
+                              data-tagdrop
+                              onClick={e=>{e.stopPropagation();setTagOpen(isTagOpen?null:{lid,idx:i});setNewTagInput("");}}
+                              style={{border:"none",background:stags.length>0?"#e8e3db":"transparent",color:stags.length>0?"#6e6c66":"#b0aea5",fontSize:10,cursor:"pointer",fontFamily:"inherit",padding:"1px 5px",borderRadius:3,lineHeight:1.4}}
+                              title="管理标签"
+                            >🏷{stags.length>0?` ${stags.length}`:""}</button>
+                            {isTagOpen&&(
+                              <div data-tagdrop onMouseDown={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:"calc(100% + 2px)",zIndex:300,background:"#faf8f3",border:"1px solid #d8d5ce",borderRadius:6,padding:8,minWidth:150,boxShadow:"0 4px 14px rgba(0,0,0,0.13)"}}>
+                                <div style={{fontSize:10,color:"#8a8880",marginBottom:5,fontWeight:700,letterSpacing:"0.04em"}}>打标签</div>
+                                {tagDefs.map(td=>{
+                                  const active=stags.includes(td.name);
+                                  return(
+                                    <div key={td.name} onClick={()=>toggleStockTag(lid,i,td.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"3px 5px",borderRadius:4,cursor:"pointer",background:active?td.color+"1a":"transparent",marginBottom:1}}>
+                                      <span style={{width:7,height:7,borderRadius:"50%",background:td.color,flexShrink:0,border:active?"none":"1px solid "+td.color}}/>
+                                      <span style={{fontSize:12,flex:1,color:"#2b2b2b"}}>{td.name}</span>
+                                      {active&&<span style={{fontSize:10,color:td.color,fontWeight:700}}>✓</span>}
+                                    </div>
+                                  );
+                                })}
+                                {tagDefs.length===0&&<div style={{fontSize:11,color:"#b0aea5",padding:"2px 4px",marginBottom:4}}>暂无标签，输入新建</div>}
+                                <div style={{borderTop:"1px solid #e8e4dc",marginTop:5,paddingTop:5,display:"flex",gap:3}}>
+                                  <input
+                                    data-tagdrop
+                                    value={newTagInput}
+                                    onChange={e=>setNewTagInput(e.target.value)}
+                                    onKeyDown={e=>{if(e.key==="Enter"&&newTagInput.trim()){addTagDefAndApply(lid,i,newTagInput.trim());setNewTagInput("");}}}
+                                    placeholder="新建标签…"
+                                    style={{fontSize:11,flex:1,border:"1px solid #d8d5ce",borderRadius:3,padding:"2px 5px",fontFamily:"inherit",background:"#f8f6f0",color:"#2b2b2b",outline:"none"}}
+                                  />
+                                  <button
+                                    data-tagdrop
+                                    onClick={()=>{if(newTagInput.trim()){addTagDefAndApply(lid,i,newTagInput.trim());setNewTagInput("");}}}
+                                    style={{border:"none",background:"#b75c3d",color:"#f8f6f0",fontSize:10,cursor:"pointer",fontFamily:"inherit",padding:"2px 6px",borderRadius:3}}
+                                  >+</button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {edit&&<button onClick={()=>rmStk(lid,i)} style={xb}>×</button>}
+                      </div>
                     </div>
                   );
                 })}
