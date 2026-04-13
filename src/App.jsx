@@ -91,8 +91,10 @@ async function fetchAllQuotes(stocks){
   return map;
 }
 
-const LI = ["L0","L1","L2","L3","L4","L5","L6","L7","L8"];
-const LN = {L0:"能源层",L1:"芯片层",L2:"基础设施层",L3:"模型与平台层",L4:"工具与中间件层",L5:"内容供给层",L6:"分发与变现层",L7:"具身智能层",L8:"终端应用层"};
+const LI = ["L0","L1","L2","L3","D1","D2","D3"];
+const LN = {L0:"能源层",L1:"芯片层",L2:"基础设施层",L3:"模型与平台层",D1:"数字内容与分发",D2:"物理世界AI",D3:"企业与垂直AI"};
+const STACK_IDS = ["L0","L1","L2","L3"];
+const FORK_IDS = ["D1","D2","D3"];
 const TC = {cold:{l:"冷",c:"#6a9bcc"},warm:{l:"温",c:"#b75c3d"},hot:{l:"热",c:"#c0392b"}};
 const MC = {US:"#6a9bcc",HK:"#c0392b",A:"#b75c3d",TW:"#788c5d",KR:"#6a9bcc"};
 const ML = {US:"美",HK:"港",A:"A",TW:"台",KR:"韩"};
@@ -103,11 +105,9 @@ function initStocks(){return{
   L1:[{t:"NVDA",n:"NVIDIA",m:"US",p:142.8,c:1.8},{t:"AMD",n:"AMD",m:"US",p:128.5,c:-0.5},{t:"AVGO",n:"Broadcom",m:"US",p:198.2,c:1.2},{t:"MU",n:"Micron",m:"US",p:118.9,c:5.6},{t:"2330",n:"台积电",m:"TW",p:1085,c:0.9},{t:"000660",n:"SK海力士",m:"KR",p:218500,c:3.4},{t:"688256",n:"寒武纪",m:"A",p:382.1,c:-2.1},{t:"300502",n:"中际旭创",m:"A",p:128.5,c:1.7},{t:"300502B",n:"新易盛",m:"A",p:88.6,c:2.9}],
   L2:[{t:"EQIX",n:"Equinix",m:"US",p:892.3,c:0.4},{t:"DLR",n:"Digital Realty",m:"US",p:178.5,c:1.1},{t:"DELL",n:"Dell",m:"US",p:118.9,c:2.7},{t:"SMCI",n:"Supermicro",m:"US",p:42.3,c:-3.2},{t:"ANET",n:"Arista",m:"US",p:98.7,c:1.4},{t:"PWR",n:"Quanta Svc",m:"US",p:298.4,c:0.6},{t:"2317",n:"鸿海",m:"TW",p:198.5,c:1.8},{t:"000977",n:"浪潮信息",m:"A",p:38.2,c:3.1}],
   L3:[{t:"MSFT",n:"Microsoft",m:"US",p:428.5,c:0.3},{t:"GOOGL",n:"Alphabet",m:"US",p:178.2,c:-0.8},{t:"AMZN",n:"Amazon",m:"US",p:208.3,c:1.2},{t:"META",n:"Meta",m:"US",p:612.4,c:0.9},{t:"02390",n:"智谱",m:"HK",p:68.5,c:5.2},{t:"09698",n:"MiniMax",m:"HK",p:42.3,c:3.8},{t:"BABA",n:"阿里巴巴",m:"US",p:138.6,c:2.1}],
-  L4:[{t:"U",n:"Unity",m:"US",p:28.4,c:-1.8},{t:"NOW",n:"ServiceNow",m:"US",p:1028.5,c:0.7},{t:"PLTR",n:"Palantir",m:"US",p:98.7,c:3.1},{t:"02400",n:"心动公司",m:"HK",p:52.8,c:1.6}],
-  L5:[{t:"RBLX",n:"Roblox",m:"US",p:72.3,c:2.4},{t:"TTWO",n:"Take-Two",m:"US",p:218.5,c:0.5},{t:"00700",n:"腾讯",m:"HK",p:498.2,c:0.8},{t:"09999",n:"网易",m:"HK",p:178.3,c:-0.3},{t:"01772",n:"中文在线",m:"HK",p:5.28,c:8.2},{t:"00772",n:"阅文集团",m:"HK",p:28.5,c:2.1},{t:"01024",n:"快手",m:"HK",p:58.9,c:1.4},{t:"002555",n:"三七互娱",m:"A",p:22.8,c:0.9}],
-  L6:[{t:"APP",n:"AppLovin",m:"US",p:368.5,c:1.9},{t:"TTD",n:"Trade Desk",m:"US",p:78.2,c:-2.1},{t:"MGNI",n:"Magnite",m:"US",p:18.3,c:3.5},{t:"01860",n:"汇量科技",m:"HK",p:22.8,c:2.6},{t:"301071",n:"易点天下",m:"A",p:18.9,c:1.2}],
-  L7:[{t:"TSLA",n:"Tesla",m:"US",p:278.5,c:2.8},{t:"QCOM",n:"Qualcomm",m:"US",p:172.4,c:0.6},{t:"002050",n:"三花智控",m:"A",p:28.9,c:5.1},{t:"688017",n:"绿的谐波",m:"A",p:68.3,c:4.2},{t:"300124",n:"汇川技术",m:"A",p:62.5,c:2.7},{t:"002747",n:"埃斯顿",m:"A",p:18.6,c:3.8}],
-  L8:[{t:"GOOGL",n:"Alphabet",m:"US",p:178.2,c:-0.8},{t:"MSFT",n:"Microsoft",m:"US",p:428.5,c:0.3},{t:"VEEV",n:"Veeva",m:"US",p:242.3,c:1.1},{t:"DOCS",n:"Doximity",m:"US",p:58.7,c:2.4}],
+  D1:[{t:"U",n:"Unity",m:"US",p:28.4,c:-1.8},{t:"NOW",n:"ServiceNow",m:"US",p:1028.5,c:0.7},{t:"PLTR",n:"Palantir",m:"US",p:98.7,c:3.1},{t:"02400",n:"心动公司",m:"HK",p:52.8,c:1.6},{t:"RBLX",n:"Roblox",m:"US",p:72.3,c:2.4},{t:"TTWO",n:"Take-Two",m:"US",p:218.5,c:0.5},{t:"00700",n:"腾讯",m:"HK",p:498.2,c:0.8},{t:"09999",n:"网易",m:"HK",p:178.3,c:-0.3},{t:"01772",n:"中文在线",m:"HK",p:5.28,c:8.2},{t:"00772",n:"阅文集团",m:"HK",p:28.5,c:2.1},{t:"01024",n:"快手",m:"HK",p:58.9,c:1.4},{t:"002555",n:"三七互娱",m:"A",p:22.8,c:0.9},{t:"APP",n:"AppLovin",m:"US",p:368.5,c:1.9},{t:"TTD",n:"Trade Desk",m:"US",p:78.2,c:-2.1},{t:"MGNI",n:"Magnite",m:"US",p:18.3,c:3.5},{t:"01860",n:"汇量科技",m:"HK",p:22.8,c:2.6},{t:"301071",n:"易点天下",m:"A",p:18.9,c:1.2}],
+  D2:[{t:"TSLA",n:"Tesla",m:"US",p:278.5,c:2.8},{t:"QCOM",n:"Qualcomm",m:"US",p:172.4,c:0.6},{t:"002050",n:"三花智控",m:"A",p:28.9,c:5.1},{t:"688017",n:"绿的谐波",m:"A",p:68.3,c:4.2},{t:"300124",n:"汇川技术",m:"A",p:62.5,c:2.7},{t:"002747",n:"埃斯顿",m:"A",p:18.6,c:3.8}],
+  D3:[],
 };}
 
 function initSources(){return[
@@ -118,57 +118,59 @@ function initSources(){return[
   {id:"s5",n:"Data Center Frontier",u:"https://datacenterfrontier.com",lg:"en",cat:"opt",ly:["L0","L2"],fq:"周"},
   {id:"s6",n:"Data Center Knowledge",u:"https://datacenterknowledge.com",lg:"en",cat:"opt",ly:["L0","L2"],fq:"周"},
   {id:"s7",n:"CNESA 储能联盟",u:"https://cnesa.org",lg:"zh",cat:"opt",ly:["L0"],fq:"月"},
-  {id:"s8",n:"The Information",u:"https://theinformation.com",lg:"en",cat:"must",ly:["L3","L4"],fq:"日"},
+  {id:"s8",n:"The Information",u:"https://theinformation.com",lg:"en",cat:"must",ly:["L3","D1"],fq:"日"},
   {id:"s9",n:"Menlo Ventures Report",u:"https://menlovc.com/perspective",lg:"en",cat:"must",ly:["L3"],fq:"年"},
-  {id:"s10",n:"Foundation Capital",u:"https://foundationcapital.com/ideas",lg:"en",cat:"opt",ly:["L3","L4"],fq:"月"},
-  {id:"s11",n:"Stratechery",u:"https://stratechery.com",lg:"en",cat:"opt",ly:["L3","L4"],fq:"周"},
-  {id:"s12",n:"机器之心",u:"https://jiqizhixin.com",lg:"zh",cat:"must",ly:["L3","L4"],fq:"日"},
+  {id:"s10",n:"Foundation Capital",u:"https://foundationcapital.com/ideas",lg:"en",cat:"opt",ly:["L3","D1"],fq:"月"},
+  {id:"s11",n:"Stratechery",u:"https://stratechery.com",lg:"en",cat:"opt",ly:["L3","D1"],fq:"周"},
+  {id:"s12",n:"机器之心",u:"https://jiqizhixin.com",lg:"zh",cat:"must",ly:["L3","D1"],fq:"日"},
   {id:"s13",n:"赛博禅心",u:"wechat",lg:"zh",cat:"opt",ly:["L3"],fq:"周"},
-  {id:"s14",n:"Naavik",u:"https://naavik.co",lg:"en",cat:"must",ly:["L5"],fq:"周"},
-  {id:"s15",n:"Mobile Dev Memo",u:"https://mobiledevmemo.com",lg:"en",cat:"must",ly:["L6"],fq:"周"},
-  {id:"s16",n:"AppsFlyer Blog",u:"https://appsflyer.com/blog",lg:"en",cat:"must",ly:["L6"],fq:"半年"},
-  {id:"s17",n:"DataEye",u:"https://dataeye.com",lg:"zh",cat:"must",ly:["L5"],fq:"周"},
-  {id:"s18",n:"Sensor Tower",u:"https://sensortower.com/blog",lg:"en",cat:"opt",ly:["L5","L6"],fq:"周"},
-  {id:"s19",n:"AdExchanger",u:"https://adexchanger.com",lg:"en",cat:"opt",ly:["L6"],fq:"日"},
-  {id:"s20",n:"白鲸出海",u:"https://baijingapp.com",lg:"zh",cat:"opt",ly:["L5","L6"],fq:"日"},
+  {id:"s14",n:"Naavik",u:"https://naavik.co",lg:"en",cat:"must",ly:["D1"],fq:"周"},
+  {id:"s15",n:"Mobile Dev Memo",u:"https://mobiledevmemo.com",lg:"en",cat:"must",ly:["D1"],fq:"周"},
+  {id:"s16",n:"AppsFlyer Blog",u:"https://appsflyer.com/blog",lg:"en",cat:"must",ly:["D1"],fq:"半年"},
+  {id:"s17",n:"DataEye",u:"https://dataeye.com",lg:"zh",cat:"must",ly:["D1"],fq:"周"},
+  {id:"s18",n:"Sensor Tower",u:"https://sensortower.com/blog",lg:"en",cat:"opt",ly:["D1"],fq:"周"},
+  {id:"s19",n:"AdExchanger",u:"https://adexchanger.com",lg:"en",cat:"opt",ly:["D1"],fq:"日"},
+  {id:"s20",n:"白鲸出海",u:"https://baijingapp.com",lg:"zh",cat:"opt",ly:["D1"],fq:"日"},
   {id:"s21",n:"I/O Fund",u:"https://io-fund.com",lg:"en",cat:"must",ly:["L0","L1","L2"],fq:"周"},
-  {id:"s22",n:"NVIDIA Blog",u:"https://blogs.nvidia.com",lg:"en",cat:"must",ly:["L1","L7"],fq:"周"},
+  {id:"s22",n:"NVIDIA Blog",u:"https://blogs.nvidia.com",lg:"en",cat:"must",ly:["L1","D2"],fq:"周"},
   {id:"s23",n:"Futurum Group",u:"https://futurumgroup.com/insights",lg:"en",cat:"opt",ly:["L1","L2"],fq:"周"},
-  {id:"s24",n:"Lex Fridman",u:"https://youtube.com/@lexfridman",lg:"en",cat:"opt",ly:["L3","L8"],fq:"周"},
-  {id:"s25",n:"Peter Diamandis",u:"https://youtube.com/@peterdiamandis",lg:"en",cat:"opt",ly:["L7","L8"],fq:"周"},
+  {id:"s24",n:"Lex Fridman",u:"https://youtube.com/@lexfridman",lg:"en",cat:"opt",ly:["L3","D3"],fq:"周"},
+  {id:"s25",n:"Peter Diamandis",u:"https://youtube.com/@peterdiamandis",lg:"en",cat:"opt",ly:["D2","D3"],fq:"周"},
 ];}
 
 function initItems(){return[
   {id:"m1",src:"Dell'Oro",tl:"Q1 Data Center Capex $280B, +52% YoY",dt:"03-24",ai:{ly:["L2"],sub:"服务器",imp:"high",sm:"数据中心CapEx超预期，推理需求成新驱动力"},st:"pending",cL:null},
   {id:"m2",src:"Fab Knowledge",tl:"HBM4 yield 85% at 16-hi stack",dt:"03-23",ai:{ly:["L1"],sub:"存储芯片",imp:"high",sm:"SK海力士HBM4良率突破85%"},st:"pending",cL:null},
-  {id:"m3",src:"Naavik",tl:"Roblox Q1 bookings +48%, payouts $500M",dt:"03-22",ai:{ly:["L5"],sub:"游戏",imp:"high",sm:"Roblox高增长，UGC飞轮持续验证"},st:"pending",cL:null},
-  {id:"m4",src:"MobileDevMemo",tl:"AppLovin Axon global launch",dt:"03-21",ai:{ly:["L6"],sub:"广告",imp:"high",sm:"AppLovin自助平台上线，向电商扩张"},st:"pending",cL:null},
+  {id:"m3",src:"Naavik",tl:"Roblox Q1 bookings +48%, payouts $500M",dt:"03-22",ai:{ly:["D1"],sub:"游戏",imp:"high",sm:"Roblox高增长，UGC飞轮持续验证"},st:"pending",cL:null},
+  {id:"m4",src:"MobileDevMemo",tl:"AppLovin Axon global launch",dt:"03-21",ai:{ly:["D1"],sub:"广告",imp:"high",sm:"AppLovin自助平台上线，向电商扩张"},st:"pending",cL:null},
   {id:"m5",src:"机器之心",tl:"Claude Opus 4.6: SWE 80.8%",dt:"03-20",ai:{ly:["L3"],sub:"大模型",imp:"med",sm:"Anthropic旗舰编程持续领先"},st:"unread",cL:null},
   {id:"m6",src:"Tech Invest",tl:"TSMC 2nm booked to 2027",dt:"03-19",ai:{ly:["L1"],sub:"代工",imp:"high",sm:"台积电2nm排满2027"},st:"pending",cL:null},
-  {id:"m7",src:"DataEye",tl:"AI短剧日增800部,Top50占比42%",dt:"03-18",ai:{ly:["L5"],sub:"短剧",imp:"high",sm:"AI短剧爆发，买量需求暴增"},st:"pending",cL:null},
+  {id:"m7",src:"DataEye",tl:"AI短剧日增800部,Top50占比42%",dt:"03-18",ai:{ly:["D1"],sub:"短剧",imp:"high",sm:"AI短剧爆发，买量需求暴增"},st:"pending",cL:null},
   {id:"m8",src:"I/O Fund",tl:"Big Tech CapEx run-rate >$700B",dt:"03-17",ai:{ly:["L0","L2"],sub:"CapEx",imp:"high",sm:"五大云厂商年化超7000亿"},st:"unread",cL:null},
-  {id:"m9",src:"NVIDIA",tl:"GR00T N2 humanoid model",dt:"03-12",ai:{ly:["L7"],sub:"机器人",imp:"med",sm:"NVIDIA人形机器人基础模型"},st:"unread",cL:null},
-  {id:"m10",src:"白鲸出海",tl:"汇量Q1 Mintegral +40%",dt:"03-10",ai:{ly:["L6"],sub:"广告",imp:"high",sm:"汇量高增长，非游扩大"},st:"pending",cL:null},
+  {id:"m9",src:"NVIDIA",tl:"GR00T N2 humanoid model",dt:"03-12",ai:{ly:["D2"],sub:"机器人",imp:"med",sm:"NVIDIA人形机器人基础模型"},st:"unread",cL:null},
+  {id:"m10",src:"白鲸出海",tl:"汇量Q1 Mintegral +40%",dt:"03-10",ai:{ly:["D1"],sub:"广告",imp:"high",sm:"汇量高增长，非游扩大"},st:"pending",cL:null},
 ];}
 
 const mkSS=ns=>ns.map(x=>({n:x,s:"cold"}));
 function initLayers(){return[
   {id:"L0",t:"cold",sig:[],ss:mkSS(["燃气轮机","数据中心光伏","输配电","储能","电源架构","电能质量"])},
   {id:"L1",t:"cold",sig:[],ss:mkSS(["GPU/ASIC","HBM/DRAM","先进封装","晶圆代工","光模块"])},
-  {id:"L2",t:"cold",sig:[],ss:mkSS(["IDC运营商","AI服务器","网络设备","散热/液冷","工程建设"])},
-  {id:"L3",t:"cold",sig:[],ss:mkSS(["基础大模型","Agent平台","云AI/MaaS","开源模型"])},
-  {id:"L4",t:"cold",sig:[],ss:mkSS(["AI编程","无代码","游戏工具","AI SaaS"])},
-  {id:"L5",t:"cold",sig:[],ss:mkSS(["移动游戏","AI短剧","UGC视频","AI应用"])},
-  {id:"L6",t:"cold",sig:[],ss:mkSS(["程序化广告","聚合平台","应用商店","归因分析"])},
-  {id:"L7",t:"cold",sig:[],ss:mkSS(["人形机器人","自动驾驶","核心零部件"])},
-  {id:"L8",t:"cold",sig:[],ss:mkSS(["AI搜索","AI消费助手","垂直应用","AI硬件"])},
+  {id:"L2",t:"cold",sig:[],ss:mkSS(["IDC运营商","Neocloud/算力云","高速网络","散热/液冷","工程建设"])},
+  {id:"L3",t:"cold",sig:[],ss:mkSS(["前沿大模型","AI平台/Agent","开源模型"])},
+  {id:"D1",t:"cold",sig:[],ss:mkSS(["AI开发工具","数字内容与IP","程序化广告与分发","消费AI入口"])},
+  {id:"D2",t:"cold",sig:[],ss:mkSS(["零部件","系统集成","应用场景"])},
+  {id:"D3",t:"cold",sig:[],ss:mkSS(["企业AI SaaS","垂直行业AI"])},
 ];}
 
 function initData(){return{layers:initLayers(),tx:[],scan:null,stocks:initStocks(),items:initItems(),sources:initSources(),tagDefs:[]};}
 
+const DATA_VERSION = "v3.0";
 function loadD(){
-  try{const r=localStorage.getItem("ai-dash-data");return r?JSON.parse(r):null;}
-  catch(e){return null;}
+  try{
+    const ver=localStorage.getItem("ai-dash-version");
+    if(ver!==DATA_VERSION){localStorage.removeItem("ai-dash-data");localStorage.setItem("ai-dash-version",DATA_VERSION);return null;}
+    const r=localStorage.getItem("ai-dash-data");return r?JSON.parse(r):null;
+  }catch(e){return null;}
 }
 function saveD(d){try{localStorage.setItem("ai-dash-data",JSON.stringify(d));}catch(e){console.error(e);}}
 
@@ -184,7 +186,9 @@ export default function App(){
   useEffect(()=>{
     const saved=loadD();
     if(saved && saved.layers && saved.stocks){
-      // 兼容迁移：补全 tagDefs 和每个股票的 tags 字段
+      // V3.0: 检查是否包含新层级ID，否则忽略旧数据
+      const hasNewIds = LI.every(lid=>saved.stocks[lid]!==undefined);
+      if(!hasNewIds){setReady(true);return;}
       if(!saved.tagDefs) saved.tagDefs = [];
       for(const lid of LI){
         if(saved.stocks[lid]){
@@ -277,7 +281,7 @@ export default function App(){
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:"1px solid #e0ddd6",background:"#f8f6f0",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{color:"#b75c3d",fontWeight:900,fontSize:18}}>◆</span>
-          <span style={{fontSize:18,fontWeight:700,color:"#2b2b2b",letterSpacing:"-0.015em"}}>AI产业链投资看板</span>
+          <span style={{fontSize:18,fontWeight:700,color:"#2b2b2b",letterSpacing:"-0.015em"}}>AI产业链投资看板 V3</span>
         </div>
         <div style={{display:"flex",gap:2}}>
           <button onClick={()=>setPg("main")} style={pg==="main"?bA:bN}>看板{pend>0&&<span style={bdg}>{pend}</span>}</button>
@@ -341,7 +345,7 @@ function StockPanel({stocks,tagDefs,toggleStockTag,addTagDefAndApply,rmTagDef,ad
         </div>
         <button onClick={()=>{setEdit(!edit);setAddTo(null);}} style={edit?{...btn,background:"#b75c3d",color:"#f8f6f0"}:{...btn,background:"#e0ddd6",color:"#8a8880"}}>{edit?"完成":"管理"}</button>
       </div>
-      {LI.map(lid=>{
+      {LI.map((lid,liIdx)=>{
         const list=stocks[lid]||[];
         // 用实时行情覆盖显示，没拿到就 fallback 到硬编码值
         const liveList = list.map(s=>{
@@ -351,10 +355,14 @@ function StockPanel({stocks,tagDefs,toggleStockTag,addTagDefAndApply,rmTagDef,ad
         const avg=liveList.length?(liveList.reduce((a,x)=>a+x.c,0)/liveList.length):0;
         const ac=avg>0.5?"#788c5d":avg<-0.5?"#c0392b":"#8a8880";
         const isC=!!collapsed[lid];
+        const isFork=lid.startsWith("D");
+        const showForkHeader=lid==="D1";
         return(
           <div key={lid} style={{marginBottom:1}}>
-            <div onClick={()=>setCollapsed(p=>({...p,[lid]:!p[lid]}))} style={{display:"flex",alignItems:"center",padding:"8px 12px",background:"#f0ece4",borderLeft:"3px solid "+ac,cursor:"pointer",borderRadius:4,marginBottom:2}}>
-              <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:12,color:"#8a8880",width:28,fontWeight:600}}>{lid}</span>
+            {lid==="L0"&&<div style={{fontSize:10,color:"#8a8880",fontWeight:700,letterSpacing:"0.06em",padding:"6px 12px 3px",textTransform:"uppercase"}}>主干栈 L0–L3</div>}
+            {showForkHeader&&<div style={{fontSize:10,color:"#b75c3d",fontWeight:700,letterSpacing:"0.06em",padding:"10px 12px 3px",borderTop:"2px solid #d5d0c8",marginTop:6,textTransform:"uppercase"}}>应用分叉 D1–D3</div>}
+            <div onClick={()=>setCollapsed(p=>({...p,[lid]:!p[lid]}))} style={{display:"flex",alignItems:"center",padding:"8px 12px",background:isFork?"#eee9df":"#f0ece4",borderLeft:"3px solid "+ac,cursor:"pointer",borderRadius:4,marginBottom:2}}>
+              <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:12,color:isFork?"#b75c3d":"#8a8880",width:28,fontWeight:600}}>{lid}</span>
               <span style={{fontSize:14,fontWeight:600,color:"#2b2b2b",flex:1}}>{LN[lid]}</span>
               <span style={{fontSize:11,color:"#8a8880"}}>{list.length}只</span>
               <span style={{fontSize:13,fontFamily:"'SF Mono',Consolas,monospace",color:ac,fontWeight:600,marginLeft:8}}>{avg>0?"+":""}{avg.toFixed(1)}%</span>
@@ -455,8 +463,8 @@ function Radar({layers,tx,scan,setTmp,setSS,addTx,rmTx,rmSig,onScan}){
   const[exp,setExp]=useState(null);
   const[edit,setEdit]=useState(false);
   const[txE,setTxE]=useState(false);
-  const[txF,setTxF]=useState("L5");
-  const[txT,setTxT]=useState("L6");
+  const[txF,setTxF]=useState("L3");
+  const[txT,setTxT]=useState("D1");
   const[txN,setTxN]=useState("");
   const dl=[...layers].reverse();
 
@@ -491,11 +499,17 @@ function Radar({layers,tx,scan,setTmp,setSS,addTx,rmTx,rmSig,onScan}){
         </div>}
       </div>}
       <div style={{display:"flex",flexDirection:"column",gap:1}}>
-        {dl.map(l=>{
+        {dl.map((l,di)=>{
           const tc=TC[l.t];const isE=exp===l.id;
+          const isFork=l.id.startsWith("D");
+          // 在反转列表中，D3是第一个分叉项
+          const showForkHeader=l.id==="D3";
+          const showStackHeader=l.id==="L3";
           return <div key={l.id}>
-            <div onClick={()=>setExp(isE?null:l.id)} style={{display:"flex",alignItems:"center",padding:"8px 12px",cursor:"pointer",borderLeft:"3px solid "+tc.c,background:isE?"rgba("+parseInt(tc.c.slice(1,3),16)+","+parseInt(tc.c.slice(3,5),16)+","+parseInt(tc.c.slice(5,7),16)+",0.06)":"#f0ece4",borderRadius:4,marginBottom:2}}>
-              <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:12,color:"#8a8880",width:28,fontWeight:600}}>{l.id}</span>
+            {showForkHeader&&<div style={{fontSize:10,color:"#b75c3d",fontWeight:700,letterSpacing:"0.06em",padding:"6px 12px 3px",textTransform:"uppercase"}}>应用分叉 D1–D3</div>}
+            {showStackHeader&&<div style={{fontSize:10,color:"#8a8880",fontWeight:700,letterSpacing:"0.06em",padding:"10px 12px 3px",borderTop:"2px solid #d5d0c8",marginTop:6,textTransform:"uppercase"}}>主干栈 L0–L3</div>}
+            <div onClick={()=>setExp(isE?null:l.id)} style={{display:"flex",alignItems:"center",padding:"8px 12px",cursor:"pointer",borderLeft:"3px solid "+tc.c,background:isE?"rgba("+parseInt(tc.c.slice(1,3),16)+","+parseInt(tc.c.slice(3,5),16)+","+parseInt(tc.c.slice(5,7),16)+",0.06)":isFork?"#eee9df":"#f0ece4",borderRadius:4,marginBottom:2}}>
+              <span style={{fontFamily:"'SF Mono',Consolas,monospace",fontSize:12,color:isFork?"#b75c3d":"#8a8880",width:28,fontWeight:600}}>{l.id}</span>
               <span style={{fontSize:14,fontWeight:600,color:"#2b2b2b",flex:1}}>{LN[l.id]}</span>
               {l.sig.length>0&&<span style={{fontSize:11,color:"#8a8880",marginRight:5}}>{l.sig.length}</span>}
               {edit?<div style={{display:"flex",gap:1}} onClick={e=>e.stopPropagation()}>
@@ -602,8 +616,11 @@ function Sources({sources,addSrc,rmSrc}){
     </div>}
     {LI.map(lid=>{
       const srcs=byL[lid];if(!srcs)return null;
+      const isFork=lid.startsWith("D");
       return <div key={lid} style={{marginBottom:10}}>
-        <div style={{fontSize:14,fontWeight:600,color:"#b75c3d",borderBottom:"1px solid #e0ddd6",paddingBottom:4,marginBottom:6}}>{lid} {LN[lid]}</div>
+        {lid==="L0"&&<div style={{fontSize:10,color:"#8a8880",fontWeight:700,letterSpacing:"0.06em",padding:"6px 0 3px",textTransform:"uppercase"}}>主干栈</div>}
+        {lid==="D1"&&<div style={{fontSize:10,color:"#b75c3d",fontWeight:700,letterSpacing:"0.06em",padding:"10px 0 3px",borderTop:"2px solid #d5d0c8",marginTop:6,textTransform:"uppercase"}}>应用分叉</div>}
+        <div style={{fontSize:14,fontWeight:600,color:isFork?"#b75c3d":"#6a9bcc",borderBottom:"1px solid #e0ddd6",paddingBottom:4,marginBottom:6}}>{lid} {LN[lid]}</div>
         {srcs.map(s=><div key={s.id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",borderBottom:"1px solid #e0ddd6"}}>
           <span style={{width:5,height:5,borderRadius:"50%",background:s.cat==="must"?"#b75c3d":"#b0aea5"}}/>
           <span style={{fontSize:14,color:s.cat==="must"?"#2b2b2b":"#666",flex:1,fontWeight:s.cat==="must"?600:400}}>{s.n}</span>
