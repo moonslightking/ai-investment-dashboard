@@ -9,10 +9,12 @@ const TWEAK_DEFAULTS = {
   colorConvention: "us",
 };
 
+const cloneIndustryChain = () => JSON.parse(JSON.stringify(INDUSTRY_CHAIN));
+
 export default function App() {
   const [convention, setConvention] = useState(TWEAK_DEFAULTS.colorConvention);
   const [now, setNow] = useState(() => new Date());
-  const [industryChain, setIndustryChain] = useState(() => structuredClone(INDUSTRY_CHAIN));
+  const [industryChain, setIndustryChain] = useState(cloneIndustryChain);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-convention", convention);
