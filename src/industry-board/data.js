@@ -4,6 +4,15 @@ export const INDUSTRY_CHAIN = GENERATED_INDUSTRY_CHAIN;
 
 // ============ KEY METRICS ============
 // Each metric: id, label, unit, current, change, spark (12 points), category
+function seededRandom(seed) {
+  let value = seed % 2147483647;
+  if (value <= 0) value += 2147483646;
+  return () => {
+    value = (value * 16807) % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+}
+
 function sparkline(seed, points = 20, vol = 0.03, drift = 0.005) {
   const rnd = seededRandom(seed);
   const arr = [100];
