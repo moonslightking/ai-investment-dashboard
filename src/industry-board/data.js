@@ -1,6 +1,10 @@
-import { INDUSTRY_CHAIN as GENERATED_INDUSTRY_CHAIN } from "./generatedIndustryData.js";
+import {
+  DATA_SOURCE as GENERATED_DATA_SOURCE,
+  INDUSTRY_CHAIN as GENERATED_INDUSTRY_CHAIN,
+} from "./generatedIndustryData.js";
 
 export const INDUSTRY_CHAIN = GENERATED_INDUSTRY_CHAIN;
+export const DATA_SOURCE = GENERATED_DATA_SOURCE;
 
 // ============ KEY METRICS ============
 // Each metric: id, label, unit, current, change, spark (12 points), category

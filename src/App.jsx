@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { INDUSTRY_CHAIN, KEY_METRICS, NEWS } from "./industry-board/data.js";
+import { DATA_SOURCE, INDUSTRY_CHAIN, KEY_METRICS, NEWS } from "./industry-board/data.js";
 import { MetricCard, NewsFeed } from "./industry-board/metrics_news.jsx";
 import { SectorCard } from "./industry-board/sector.jsx";
 import { recalculateSector } from "./industry-board/sectorMath.js";
@@ -11,19 +11,30 @@ const TWEAK_DEFAULTS = {
 
 const cloneIndustryChain = () => JSON.parse(JSON.stringify(INDUSTRY_CHAIN));
 
+const formatSyncTime = (value) => {
+  if (!value) return "NO QUOTE SYNC";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
+const quoteSourceSummary = Object.entries(DATA_SOURCE.quoteSourceCounts || {})
+  .map(([source, count]) => `${source} ${count}`)
+  .join(" · ");
+
 export default function App() {
   const [convention, setConvention] = useState(TWEAK_DEFAULTS.colorConvention);
-  const [now, setNow] = useState(() => new Date());
   const [industryChain, setIndustryChain] = useState(cloneIndustryChain);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-convention", convention);
   }, [convention]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60 * 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const allSectors = useMemo(
     () => industryChain.flatMap((layer) => layer.sectors),
@@ -49,13 +60,8 @@ export default function App() {
     })));
   };
 
-  const timeStr = now.toLocaleString("en-US", {
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const quoteSyncLabel = formatSyncTime(DATA_SOURCE.quoteSyncedAt);
+  const quoteCoverageLabel = `${DATA_SOURCE.quoteCoverage || 0}/${DATA_SOURCE.companyCount || 0}`;
 
   return (
     <div className="dashboard">
@@ -69,9 +75,9 @@ export default function App() {
         </div>
 
         <div className="topbar-right">
-          <div className="live-chip">
+          <div className="live-chip" title={quoteSourceSummary || DATA_SOURCE.quoteSource}>
             <span className="pulse-dot" />
-            WORKBOOK SYNC · {timeStr}
+            QUOTE SNAPSHOT · {quoteCoverageLabel} · {quoteSyncLabel}
           </div>
           <div className="topbar-stat">
             <span className="lbl">Sectors Avg Daily</span>
@@ -126,7 +132,7 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>L0-L2 主干栈 · Industry Chain</h2>
-              <span className="sub">同步自 L0-L2stocks.xlsx 的排序与快照字段</span>
+              <span className="sub">排序来自 L0-L2stocks.xlsx，价格来自 Futu 快照 + fallback</span>
               <span className="num">{allSectors.length} SECTORS</span>
             </div>
           </div>

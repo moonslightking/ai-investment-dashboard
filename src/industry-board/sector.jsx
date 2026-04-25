@@ -117,7 +117,7 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
           <div
             key={company.ticker}
             className="company-row"
-            title={company.ticker}
+            title={`${company.ticker} · ${company.quoteSource || "workbook"}${company.quoteTime ? ` · ${company.quoteTime}` : ""}`}
           >
             <span className="company-rank">{company.rank}</span>
             <div>
