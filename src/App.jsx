@@ -42,12 +42,15 @@ export default function App() {
   );
 
   const boardStats = useMemo(() => {
-    const avgChange = allSectors.reduce((sum, sector) => sum + sector.averageChange, 0) / allSectors.length;
-    const sorted = [...allSectors].sort((a, b) => b.averageChange - a.averageChange);
+    const getCurrentMonthChange = (sector) => sector.currentMonthChange ?? sector.averageChange;
+    const avgChange = allSectors.reduce((sum, sector) => sum + getCurrentMonthChange(sector), 0) / allSectors.length;
+    const sorted = [...allSectors].sort((a, b) => getCurrentMonthChange(b) - getCurrentMonthChange(a));
     return {
       avgChange,
       bestSector: sorted[0],
       worstSector: sorted[sorted.length - 1],
+      bestChange: getCurrentMonthChange(sorted[0]),
+      worstChange: getCurrentMonthChange(sorted[sorted.length - 1]),
     };
   }, [allSectors]);
 
@@ -80,7 +83,7 @@ export default function App() {
             QUOTE SNAPSHOT · {quoteCoverageLabel} · {quoteSyncLabel}
           </div>
           <div className="topbar-stat">
-            <span className="lbl">Sectors Avg Daily</span>
+            <span className="lbl">Sectors Avg Month</span>
             <span
               className="val"
               style={{ color: boardStats.avgChange >= 0 ? "var(--up)" : "var(--down)" }}
@@ -92,14 +95,14 @@ export default function App() {
           <div className="topbar-stat">
             <span className="lbl">Best</span>
             <span className="val" style={{ color: "var(--up)" }}>
-              {boardStats.bestSector.code} {boardStats.bestSector.name} {boardStats.bestSector.averageChange >= 0 ? "+" : ""}
-              {boardStats.bestSector.averageChange.toFixed(1)}%
+              {boardStats.bestSector.code} {boardStats.bestSector.name} {boardStats.bestChange >= 0 ? "+" : ""}
+              {boardStats.bestChange.toFixed(1)}%
             </span>
           </div>
           <div className="topbar-stat">
             <span className="lbl">Worst</span>
             <span className="val" style={{ color: "var(--down)" }}>
-              {boardStats.worstSector.code} {boardStats.worstSector.name} {boardStats.worstSector.averageChange.toFixed(1)}%
+              {boardStats.worstSector.code} {boardStats.worstSector.name} {boardStats.worstChange.toFixed(1)}%
             </span>
           </div>
         </div>

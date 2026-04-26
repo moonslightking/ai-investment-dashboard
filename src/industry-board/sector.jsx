@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sparkline } from "./charts.jsx";
+import { Candlestick } from "./charts.jsx";
 import { createCompanyFromDraft, VISIBLE_COMPANY_LIMIT } from "./sectorMath.js";
 
 const EMPTY_DRAFT = {
@@ -36,10 +36,11 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
   const visibleCompanies = expanded || editing
     ? sector.companies
     : sector.companies.slice(0, VISIBLE_COMPANY_LIMIT);
-  const avgUp = sector.averageChange >= 0;
-  const trendValues = useMemo(
-    () => (sector.trend || []).map((point) => point.value),
-    [sector.trend],
+  const currentMonthChange = sector.currentMonthChange ?? sector.averageChange;
+  const avgUp = currentMonthChange >= 0;
+  const monthlyCandles = useMemo(
+    () => (sector.monthlyTrend || []).slice(-6),
+    [sector.monthlyTrend],
   );
 
   const updateDraft = (field, value) => {
@@ -72,22 +73,22 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
           <div className="sector-desc">{sector.summary}</div>
         </div>
         <div>
-          <div className="sector-change-lbl">Avg Daily Move</div>
+          <div className="sector-change-lbl">Current Month Avg</div>
           <div className={`sector-change ${avgUp ? "up" : "down"}`}>
-            {formatPct(sector.averageChange)}
+            {formatPct(currentMonthChange)}
           </div>
         </div>
       </div>
 
       <div className="sector-trend">
         <div className="sector-trend-head">
-          <span>Group Avg Trend</span>
-          <span>Prev / Open / Range / Last</span>
+          <span>6M Monthly Avg Return</span>
+          <span>O / H / L / C</span>
         </div>
-        {trendValues.length > 1 ? (
-          <Sparkline data={trendValues} height={52} positive={sector.averageChange >= 0} />
+        {monthlyCandles.length > 1 ? (
+          <Candlestick data={monthlyCandles} height={72} />
         ) : (
-          <div className="trend-empty">No group trend data</div>
+          <div className="trend-empty">No monthly group data</div>
         )}
       </div>
 

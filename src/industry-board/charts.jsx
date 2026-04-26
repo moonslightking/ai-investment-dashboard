@@ -10,7 +10,7 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
   const plotW = width - padX * 2;
   const plotH = height - padY * 2;
 
-  const allVals = data.flatMap(d => [d.high, d.low]);
+  const allVals = data.flatMap(d => [d.high, d.low, d.open, d.close]);
   const min = Math.min(...allVals);
   const max = Math.max(...allVals);
   const range = max - min || 1;
@@ -25,7 +25,7 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
         {/* baseline grid */}
         <line x1={padX} x2={width - padX} y1={height/2} y2={height/2}
-          stroke="rgba(255,255,255,0.04)" strokeDasharray="2 4" />
+          stroke="var(--border-normal)" strokeDasharray="2 4" />
 
         {data.map((d, i) => {
           const cx = padX + step * (i + 0.5);
@@ -66,7 +66,7 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
           left: Math.min(Math.max(hover.x * 1 - 70, 4), width - 140),
           top: 4,
         }}>
-          W{hover.idx + 1} · O {hover.open.toFixed(1)} H {hover.high.toFixed(1)} L {hover.low.toFixed(1)} C {hover.close.toFixed(1)}
+          {hover.label || `M${hover.idx + 1}`} · O {hover.open.toFixed(1)} H {hover.high.toFixed(1)} L {hover.low.toFixed(1)} C {hover.close.toFixed(1)}
         </div>
       )}
     </div>

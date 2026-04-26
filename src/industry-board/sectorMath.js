@@ -57,6 +57,54 @@ export const averageCompanyTrends = (companies) => {
   }).filter((point) => isFiniteNumber(point.value));
 };
 
+export const averageCompanyMonthlyTrends = (companies) => {
+  const monthMap = new Map();
+
+  companies.forEach((company) => {
+    if (!Array.isArray(company.monthlyTrend)) return;
+    company.monthlyTrend.forEach((point) => {
+      if (!point?.month) return;
+      const bucket = monthMap.get(point.month) || {
+        month: point.month,
+        label: point.label || point.month.slice(5),
+        open: [],
+        high: [],
+        low: [],
+        close: [],
+      };
+
+      ["open", "high", "low", "close"].forEach((key) => {
+        if (isFiniteNumber(point[key])) bucket[key].push(point[key]);
+      });
+      monthMap.set(point.month, bucket);
+    });
+  });
+
+  return [...monthMap.values()]
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((bucket) => {
+      const average = (values) => (
+        values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null
+      );
+
+      return {
+        month: bucket.month,
+        label: bucket.label,
+        open: average(bucket.open),
+        high: average(bucket.high),
+        low: average(bucket.low),
+        close: average(bucket.close),
+      };
+    })
+    .filter((point) => (
+      isFiniteNumber(point.open)
+      && isFiniteNumber(point.high)
+      && isFiniteNumber(point.low)
+      && isFiniteNumber(point.close)
+    ))
+    .slice(-6);
+};
+
 export const recalculateSector = (sector, companies) => {
   const rankedCompanies = companies.map((company, index) => {
     const price = isFiniteNumber(company.price) ? company.price : null;
@@ -84,6 +132,8 @@ export const recalculateSector = (sector, companies) => {
   const validChanges = movers.map((company) => company.dailyChange);
   const leader = movers[movers.length - 1] || null;
   const laggard = movers[0] || null;
+  const monthlyTrend = averageCompanyMonthlyTrends(rankedCompanies);
+  const currentMonthChange = monthlyTrend[monthlyTrend.length - 1]?.close;
 
   return {
     ...sector,
@@ -93,6 +143,7 @@ export const recalculateSector = (sector, companies) => {
     averageChange: validChanges.length > 0
       ? validChanges.reduce((sum, value) => sum + value, 0) / validChanges.length
       : 0,
+    currentMonthChange: isFiniteNumber(currentMonthChange) ? currentMonthChange : sector.currentMonthChange,
     leader: leader
       ? { ticker: leader.displayTicker, change: leader.dailyChange }
       : null,
@@ -100,6 +151,7 @@ export const recalculateSector = (sector, companies) => {
       ? { ticker: laggard.displayTicker, change: laggard.dailyChange }
       : null,
     trend: averageCompanyTrends(rankedCompanies),
+    monthlyTrend: monthlyTrend.length > 0 ? monthlyTrend : sector.monthlyTrend,
   };
 };
 

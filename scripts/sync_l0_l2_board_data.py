@@ -298,6 +298,70 @@ def fetch_yahoo_quote(ticker: str):
         return None
 
 
+def yahoo_chart_symbol(ticker: str):
+    market, _, symbol = ticker.partition(".")
+    if not symbol:
+        return ticker
+    if market == "US":
+        return symbol
+    if market == "HK":
+        return f"{symbol.zfill(4)}.HK"
+    if market == "SH":
+        return f"{symbol}.SS"
+    if market == "SZ":
+        return f"{symbol}.SZ"
+    return None
+
+
+def fetch_yahoo_monthly_trend(ticker: str):
+    symbol = yahoo_chart_symbol(ticker)
+    if not symbol:
+        return []
+
+    url = (
+        f"https://query2.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(symbol)}"
+        "?range=7mo&interval=1mo&includePrePost=false"
+    )
+    try:
+        raw = fetch_text(url, headers={"User-Agent": "Mozilla/5.0"})
+        data = json.loads(raw.decode("utf-8"))
+        result = (data.get("chart", {}).get("result") or [None])[0]
+        if not result:
+            return []
+
+        timestamps = result.get("timestamp") or []
+        quote = ((result.get("indicators") or {}).get("quote") or [{}])[0]
+        opens = quote.get("open") or []
+        highs = quote.get("high") or []
+        lows = quote.get("low") or []
+        closes = quote.get("close") or []
+        points = []
+
+        for index, timestamp in enumerate(timestamps):
+            open_price = parse_number(opens[index] if index < len(opens) else None)
+            high = parse_number(highs[index] if index < len(highs) else None)
+            low = parse_number(lows[index] if index < len(lows) else None)
+            close = parse_number(closes[index] if index < len(closes) else None)
+            if not all(is_finite_number(value) for value in (open_price, high, low, close)) or open_price == 0:
+                continue
+
+            month = datetime.fromtimestamp(timestamp).astimezone().strftime("%Y-%m")
+            points.append({
+                "month": month,
+                "label": month[5:],
+                "open": 0.0,
+                "high": ((high - open_price) / open_price) * 100,
+                "low": ((low - open_price) / open_price) * 100,
+                "close": ((close - open_price) / open_price) * 100,
+            })
+
+        deduped = {point["month"]: point for point in points}
+        return [deduped[month] for month in sorted(deduped)][-6:]
+    except (urllib.error.URLError, TimeoutError, http.client.IncompleteRead, json.JSONDecodeError, KeyError, TypeError) as exc:
+        print(f"Yahoo monthly trend failed for {ticker}: {exc}", file=sys.stderr)
+        return []
+
+
 def sina_code(ticker: str):
     market, _, symbol = ticker.partition(".")
     if not symbol:
@@ -402,7 +466,20 @@ def fetch_quotes(tickers):
     return quotes, quote_failures, futu_failures
 
 
-def build_company(row_values, rank: int, quote=None):
+def fetch_monthly_trends(tickers):
+    trends = {}
+    failures = {}
+    for ticker in tickers:
+      trend = fetch_yahoo_monthly_trend(ticker)
+      if trend:
+          trends[ticker] = trend
+      else:
+          failures[ticker] = "monthly trend unavailable"
+      time.sleep(0.05)
+    return trends, failures
+
+
+def build_company(row_values, rank: int, quote=None, monthly_trend=None):
     raw_ticker = (row_values[0] or "").strip()
     if not raw_ticker:
         return None
@@ -437,17 +514,60 @@ def build_company(row_values, rank: int, quote=None):
         "low": low,
         "dailyChange": daily_change,
         "trend": build_snapshot_trend(price, open_price, high, low, prev_close),
+        "monthlyTrend": monthly_trend or [],
         "quoteSource": (quote or {}).get("source", "workbook"),
         "quoteTime": (quote or {}).get("asOf"),
     }
 
 
-def build_sector(sheet, quotes):
+def average_company_monthly_trends(companies):
+    month_buckets = {}
+    for company in companies:
+        for point in company.get("monthlyTrend") or []:
+            month = point.get("month")
+            if not month:
+                continue
+            bucket = month_buckets.setdefault(month, {
+                "month": month,
+                "label": point.get("label") or month[5:],
+                "open": [],
+                "high": [],
+                "low": [],
+                "close": [],
+            })
+            for key in ("open", "high", "low", "close"):
+                value = point.get(key)
+                if is_finite_number(value):
+                    bucket[key].append(value)
+
+    averaged = []
+    for month in sorted(month_buckets):
+        bucket = month_buckets[month]
+
+        def avg(key):
+            values = bucket[key]
+            return sum(values) / len(values) if values else None
+
+        point = {
+            "month": month,
+            "label": bucket["label"],
+            "open": avg("open"),
+            "high": avg("high"),
+            "low": avg("low"),
+            "close": avg("close"),
+        }
+        if all(is_finite_number(point[key]) for key in ("open", "high", "low", "close")):
+            averaged.append(point)
+
+    return averaged[-6:]
+
+
+def build_sector(sheet, quotes, monthly_trends):
     layer_code, sector_code, sector_name, sector_id = parse_sheet_meta(sheet.title)
     companies = []
     for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=1):
         raw_ticker = (row[0] or "").strip()
-        company = build_company(row, idx, quotes.get(raw_ticker))
+        company = build_company(row, idx, quotes.get(raw_ticker), monthly_trends.get(raw_ticker))
         if company:
             companies.append(company)
 
@@ -458,6 +578,8 @@ def build_sector(sheet, quotes):
         if company["dailyChange"] is not None and company.get("quoteSource") != "workbook"
     ]
     average_change = sum(valid_changes) / len(valid_changes) if valid_changes else 0.0
+    monthly_trend = average_company_monthly_trends(companies)
+    current_month_change = monthly_trend[-1]["close"] if monthly_trend else None
     movers = sorted(
         [company for company in companies if company["dailyChange"] is not None],
         key=lambda item: item["dailyChange"],
@@ -471,6 +593,7 @@ def build_sector(sheet, quotes):
         "name": sector_name,
         "summary": f"{len(companies)} companies",
         "averageChange": average_change,
+        "currentMonthChange": current_month_change if current_month_change is not None else average_change,
         "quoteCoverage": len(live_changes),
         "leader": {
             "ticker": leader["displayTicker"],
@@ -481,6 +604,7 @@ def build_sector(sheet, quotes):
             "change": laggard["dailyChange"],
         } if laggard else None,
         "trend": average_company_trends(companies),
+        "monthlyTrend": monthly_trend,
         "companies": companies,
     }
 
@@ -499,6 +623,7 @@ def build_industry_chain():
     workbook = load_workbook(WORKBOOK_PATH, data_only=True)
     tickers = extract_tickers(workbook)
     quotes, quote_failures, futu_failures = fetch_quotes(tickers)
+    monthly_trends, monthly_failures = fetch_monthly_trends(tickers)
 
     grouped_layers = {
         layer_code: {
@@ -512,7 +637,7 @@ def build_industry_chain():
     }
 
     for sheet in workbook.worksheets:
-        layer_code, sector = build_sector(sheet, quotes)
+        layer_code, sector = build_sector(sheet, quotes, monthly_trends)
         grouped_layers[layer_code]["sectors"].append(sector)
 
     chain = [grouped_layers[layer_code] for layer_code in ("L0", "L1", "L2") if grouped_layers[layer_code]["sectors"]]
@@ -527,8 +652,10 @@ def build_industry_chain():
         "quoteSource": "futu+fallback",
         "companyCount": len(tickers),
         "quoteCoverage": len(quotes),
+        "monthlyCoverage": len(monthly_trends),
         "quoteSourceCounts": source_counts,
         "quoteMissing": quote_failures,
+        "monthlyMissing": monthly_failures,
         "futuUnsupported": futu_failures,
     }
     return chain, metadata
