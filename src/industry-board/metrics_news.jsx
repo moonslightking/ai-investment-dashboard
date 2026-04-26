@@ -1,36 +1,59 @@
 import { useState } from "react";
-import { Sparkline } from "./charts.jsx";
 
 export const MetricCard = ({ m }) => {
-  const up = m.change >= 0;
-  // For some metrics (API price, PUE, spot), going DOWN is the "good" direction
-  // but we color purely by sign for clarity; the hint text explains the nuance.
-  const signStr = (m.change >= 0 ? '+' : '') + m.change.toFixed(1) + '%';
-  const fmt = v => {
-    if (Math.abs(v) >= 1000) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
-    if (Math.abs(v) >= 100) return v.toFixed(1);
-    if (Math.abs(v) >= 10) return v.toFixed(2);
-    return v.toFixed(2);
-  };
   return (
-    <div className={`metric-card ${up ? 'up' : 'down'}`}>
+    <article className={`metric-card priority-${m.priority.toLowerCase()}`}>
       <div className="metric-head">
         <span className="metric-cat">{m.category}</span>
-        <span className={`metric-change ${up ? 'up' : 'down'}`}>{signStr}</span>
+        <span className="metric-priority">{m.priority}</span>
       </div>
-      <div className="metric-label">{m.label}</div>
-      <div className="metric-sublabel">{m.sublabel}</div>
-      <div className="metric-current">
-        <span className="metric-value">{fmt(m.current)}</span>
-        {m.unit && <span className="metric-unit">{m.unit}</span>}
+      <div className="metric-label">{m.title}</div>
+      <div className="metric-sublabel">{m.titleEn}</div>
+
+      <div className="metric-meta-row">
+        <span>{m.signalType}</span>
+        <span>{m.frequency}</span>
+        <span>Source {m.sourceGrade}</span>
       </div>
-      <div className="metric-spark">
-        <Sparkline data={m.spark} positive={up} height={36} />
+
+      <p className="metric-definition">{m.definition}</p>
+
+      <div className="metric-watch">
+        {m.watch.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
       </div>
-      <div className="metric-hint">{m.hint}</div>
-    </div>
+
+      <div className="metric-sources" aria-label={`${m.title} data sources`}>
+        {m.sources.map((source) => (
+          <a key={source.label} href={source.url} target="_blank" rel="noreferrer">
+            {source.label}
+          </a>
+        ))}
+      </div>
+
+      <div className="metric-hint">{m.guardrail}</div>
+    </article>
   );
 };
+
+export const MetricGroup = ({ group, metrics }) => (
+  <section className="metric-group" aria-labelledby={`metric-group-${group.id}`}>
+    <div className="metric-group-head">
+      <div>
+        <h3 id={`metric-group-${group.id}`}>{group.title}</h3>
+        <span>{group.titleEn}</span>
+      </div>
+      <strong>{metrics.length}</strong>
+    </div>
+    <p className="metric-group-subtitle">{group.subtitle}</p>
+    <div className="metrics-grid">
+      {metrics.map((metric) => (
+        <MetricCard key={metric.id} m={metric} />
+      ))}
+    </div>
+  </section>
+);
 
 const NewsItem = ({ n }) => {
   return (

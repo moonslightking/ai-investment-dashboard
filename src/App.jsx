@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { DATA_SOURCE, INDUSTRY_CHAIN, KEY_METRICS, NEWS } from "./industry-board/data.js";
-import { MetricCard, NewsFeed } from "./industry-board/metrics_news.jsx";
+import { DATA_SOURCE, INDUSTRY_CHAIN, KEY_METRIC_GROUPS, KEY_METRICS, NEWS } from "./industry-board/data.js";
+import { MetricGroup, NewsFeed } from "./industry-board/metrics_news.jsx";
 import { SectorCard } from "./industry-board/sector.jsx";
 import { recalculateSector } from "./industry-board/sectorMath.js";
 import "./industry-board/styles.css";
@@ -53,6 +53,11 @@ export default function App() {
       worstChange: getCurrentMonthChange(sorted[sorted.length - 1]),
     };
   }, [allSectors]);
+
+  const keyMetricsById = useMemo(
+    () => new Map(KEY_METRICS.map((metric) => [metric.id, metric])),
+    [],
+  );
 
   const updateSectorCompanies = (sectorId, companies) => {
     setIndustryChain((currentChain) => currentChain.map((layer) => ({
@@ -166,13 +171,17 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>关键数据追踪 · Key Metrics</h2>
-              <span className="sub">当前仍为示例指标，尚未与 workbook 同步</span>
-              <span className="num">{KEY_METRICS.length} SIGNALS</span>
+              <span className="sub">算力供需跟踪框架：需求体感、供给约束、扩产投入、价值捕获</span>
+              <span className="num">{KEY_METRICS.length} SIGNALS · {KEY_METRIC_GROUPS.length} GROUPS</span>
             </div>
           </div>
-          <div className="metrics-grid">
-            {KEY_METRICS.map((metric) => (
-              <MetricCard key={metric.id} m={metric} />
+          <div className="metric-groups">
+            {KEY_METRIC_GROUPS.map((group) => (
+              <MetricGroup
+                key={group.id}
+                group={group}
+                metrics={group.metricIds.map((id) => keyMetricsById.get(id)).filter(Boolean)}
+              />
             ))}
           </div>
         </section>
