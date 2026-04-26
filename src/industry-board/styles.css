@@ -430,6 +430,7 @@ body {
 }
 .sector-trend-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
   color: var(--text-lo);
@@ -438,6 +439,30 @@ body {
   text-transform: uppercase;
   font-weight: 600;
   margin-bottom: 6px;
+}
+.sector-trend-title {
+  white-space: nowrap;
+}
+.sector-monthly-summary {
+  flex: 1 1 210px;
+  min-width: 210px;
+  text-align: right;
+  white-space: normal;
+}
+.candle-tooltip {
+  position: absolute;
+  z-index: 2;
+  min-width: 136px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-normal);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-hi);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.45;
+  pointer-events: none;
 }
 .trend-empty {
   display: grid;

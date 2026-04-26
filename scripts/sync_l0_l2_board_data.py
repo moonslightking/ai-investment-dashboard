@@ -337,6 +337,7 @@ def fetch_yahoo_monthly_trend(ticker: str):
         closes = quote.get("close") or []
         points = []
 
+        raw_points = []
         for index, timestamp in enumerate(timestamps):
             open_price = parse_number(opens[index] if index < len(opens) else None)
             high = parse_number(highs[index] if index < len(highs) else None)
@@ -346,17 +347,39 @@ def fetch_yahoo_monthly_trend(ticker: str):
                 continue
 
             month = datetime.fromtimestamp(timestamp).astimezone().strftime("%Y-%m")
-            points.append({
+            raw_points.append({
                 "month": month,
                 "label": month[5:],
-                "open": 0.0,
-                "high": ((high - open_price) / open_price) * 100,
-                "low": ((low - open_price) / open_price) * 100,
-                "close": ((close - open_price) / open_price) * 100,
+                "openPrice": open_price,
+                "highPrice": high,
+                "lowPrice": low,
+                "closePrice": close,
             })
 
-        deduped = {point["month"]: point for point in points}
-        return [deduped[month] for month in sorted(deduped)][-6:]
+        deduped = {point["month"]: point for point in raw_points}
+        raw_points = [deduped[month] for month in sorted(deduped)][-6:]
+        if not raw_points:
+            return []
+
+        base_open = raw_points[0]["openPrice"]
+        if not is_finite_number(base_open) or base_open == 0:
+            return []
+
+        def pct(value):
+            return ((value - base_open) / base_open) * 100
+
+        return [
+            {
+                "month": point["month"],
+                "label": point["label"],
+                "open": pct(point["openPrice"]),
+                "high": pct(point["highPrice"]),
+                "low": pct(point["lowPrice"]),
+                "close": pct(point["closePrice"]),
+                "change": ((point["closePrice"] - point["openPrice"]) / point["openPrice"]) * 100,
+            }
+            for point in raw_points
+        ]
     except (urllib.error.URLError, TimeoutError, http.client.IncompleteRead, json.JSONDecodeError, KeyError, TypeError) as exc:
         print(f"Yahoo monthly trend failed for {ticker}: {exc}", file=sys.stderr)
         return []
@@ -534,8 +557,9 @@ def average_company_monthly_trends(companies):
                 "high": [],
                 "low": [],
                 "close": [],
+                "change": [],
             })
-            for key in ("open", "high", "low", "close"):
+            for key in ("open", "high", "low", "close", "change"):
                 value = point.get(key)
                 if is_finite_number(value):
                     bucket[key].append(value)
@@ -555,8 +579,9 @@ def average_company_monthly_trends(companies):
             "high": avg("high"),
             "low": avg("low"),
             "close": avg("close"),
+            "change": avg("change"),
         }
-        if all(is_finite_number(point[key]) for key in ("open", "high", "low", "close")):
+        if all(is_finite_number(point[key]) for key in ("open", "high", "low", "close", "change")):
             averaged.append(point)
 
     return averaged[-6:]
@@ -579,7 +604,7 @@ def build_sector(sheet, quotes, monthly_trends):
     ]
     average_change = sum(valid_changes) / len(valid_changes) if valid_changes else 0.0
     monthly_trend = average_company_monthly_trends(companies)
-    current_month_change = monthly_trend[-1]["close"] if monthly_trend else None
+    current_month_change = monthly_trend[-1]["change"] if monthly_trend else None
     movers = sorted(
         [company for company in companies if company["dailyChange"] is not None],
         key=lambda item: item["dailyChange"],

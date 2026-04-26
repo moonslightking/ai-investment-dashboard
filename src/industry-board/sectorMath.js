@@ -71,9 +71,10 @@ export const averageCompanyMonthlyTrends = (companies) => {
         high: [],
         low: [],
         close: [],
+        change: [],
       };
 
-      ["open", "high", "low", "close"].forEach((key) => {
+      ["open", "high", "low", "close", "change"].forEach((key) => {
         if (isFiniteNumber(point[key])) bucket[key].push(point[key]);
       });
       monthMap.set(point.month, bucket);
@@ -94,6 +95,7 @@ export const averageCompanyMonthlyTrends = (companies) => {
         high: average(bucket.high),
         low: average(bucket.low),
         close: average(bucket.close),
+        change: average(bucket.change),
       };
     })
     .filter((point) => (
@@ -101,6 +103,7 @@ export const averageCompanyMonthlyTrends = (companies) => {
       && isFiniteNumber(point.high)
       && isFiniteNumber(point.low)
       && isFiniteNumber(point.close)
+      && isFiniteNumber(point.change)
     ))
     .slice(-6);
 };
@@ -133,7 +136,7 @@ export const recalculateSector = (sector, companies) => {
   const leader = movers[movers.length - 1] || null;
   const laggard = movers[0] || null;
   const monthlyTrend = averageCompanyMonthlyTrends(rankedCompanies);
-  const currentMonthChange = monthlyTrend[monthlyTrend.length - 1]?.close;
+  const currentMonthChange = monthlyTrend[monthlyTrend.length - 1]?.change;
 
   return {
     ...sector,

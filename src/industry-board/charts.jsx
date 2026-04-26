@@ -5,30 +5,41 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
   const [hover, setHover] = useState(null);
   if (!data || data.length === 0) return null;
 
-  const padX = 4;
-  const padY = 8;
-  const plotW = width - padX * 2;
-  const plotH = height - padY * 2;
+  const formatPct = (value) => `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
+  const padLeft = 28;
+  const padRight = 4;
+  const padTop = 8;
+  const padBottom = 16;
+  const plotW = width - padLeft - padRight;
+  const plotH = height - padTop - padBottom;
 
-  const allVals = data.flatMap(d => [d.high, d.low, d.open, d.close]);
+  const allVals = data.flatMap(d => [d.high, d.low, d.open, d.close, 0]);
   const min = Math.min(...allVals);
   const max = Math.max(...allVals);
   const range = max - min || 1;
+  const paddedMin = min - range * 0.08;
+  const paddedMax = max + range * 0.08;
+  const paddedRange = paddedMax - paddedMin || 1;
 
   const candleW = Math.max(2, (plotW / data.length) * 0.62);
   const step = plotW / data.length;
 
-  const yFor = v => padY + (1 - (v - min) / range) * plotH;
+  const yFor = v => padTop + (1 - (v - paddedMin) / paddedRange) * plotH;
+  const zeroY = yFor(0);
 
   return (
     <div style={{ position: 'relative', width: '100%', height }}>
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-        {/* baseline grid */}
-        <line x1={padX} x2={width - padX} y1={height/2} y2={height/2}
-          stroke="var(--border-normal)" strokeDasharray="2 4" />
+        <line x1={padLeft} x2={padLeft} y1={padTop} y2={height - padBottom}
+          stroke="var(--border-normal)" strokeWidth="0.8" />
+        <line x1={padLeft} x2={width - padRight} y1={zeroY} y2={zeroY}
+          stroke="var(--border-strong)" strokeDasharray="3 3" strokeWidth="0.8" />
+        <text x={2} y={padTop + 3} fill="var(--text-lo)" fontSize="7" fontFamily="var(--font-mono)">{formatPct(paddedMax)}</text>
+        <text x={2} y={zeroY + 3} fill="var(--text-lo)" fontSize="7" fontFamily="var(--font-mono)">0%</text>
+        <text x={2} y={height - padBottom} fill="var(--text-lo)" fontSize="7" fontFamily="var(--font-mono)">{formatPct(paddedMin)}</text>
 
         {data.map((d, i) => {
-          const cx = padX + step * (i + 0.5);
+          const cx = padLeft + step * (i + 0.5);
           const isUp = d.close >= d.open;
           const color = isUp ? 'var(--up)' : 'var(--down)';
           const bodyTop = yFor(Math.max(d.open, d.close));
@@ -50,8 +61,11 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
                 strokeWidth="1"
               />
               {/* hit area */}
-              <rect x={padX + step*i} y={0} width={step} height={height}
+              <rect x={padLeft + step*i} y={0} width={step} height={height}
                 fill="transparent" />
+              <text x={cx} y={height - 3} fill="var(--text-lo)" fontSize="7" textAnchor="middle" fontFamily="var(--font-mono)">
+                {d.label}
+              </text>
             </g>
           );
         })}
@@ -66,7 +80,7 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
           left: Math.min(Math.max(hover.x * 1 - 70, 4), width - 140),
           top: 4,
         }}>
-          {hover.label || `M${hover.idx + 1}`} · O {hover.open.toFixed(1)} H {hover.high.toFixed(1)} L {hover.low.toFixed(1)} C {hover.close.toFixed(1)}
+          {hover.label || `M${hover.idx + 1}`} · O {formatPct(hover.open)} H {formatPct(hover.high)} L {formatPct(hover.low)} C {formatPct(hover.close)}
         </div>
       )}
     </div>

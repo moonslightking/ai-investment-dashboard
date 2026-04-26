@@ -42,6 +42,10 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
     () => (sector.monthlyTrend || []).slice(-6),
     [sector.monthlyTrend],
   );
+  const monthlySummary = useMemo(
+    () => monthlyCandles.map((point) => `${point.label} ${formatPct(point.close)}`).join(" · "),
+    [monthlyCandles],
+  );
 
   const updateDraft = (field, value) => {
     setDraft((currentDraft) => ({ ...currentDraft, [field]: value }));
@@ -82,11 +86,11 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
 
       <div className="sector-trend">
         <div className="sector-trend-head">
-          <span>6M Monthly Avg Return</span>
-          <span>O / H / L / C</span>
+          <span className="sector-trend-title">6M Monthly Avg Return</span>
+          <span className="sector-monthly-summary">{monthlySummary || "—"}</span>
         </div>
         {monthlyCandles.length > 1 ? (
-          <Candlestick data={monthlyCandles} height={72} />
+          <Candlestick data={monthlyCandles} height={86} />
         ) : (
           <div className="trend-empty">No monthly group data</div>
         )}
