@@ -449,6 +449,15 @@ body {
   text-align: right;
   white-space: normal;
 }
+.sector-monthly-summary.up {
+  color: var(--up);
+}
+.sector-monthly-summary.down {
+  color: var(--down);
+}
+.sector-monthly-summary.flat {
+  color: var(--text-lo);
+}
 .candle-tooltip {
   position: absolute;
   z-index: 2;
