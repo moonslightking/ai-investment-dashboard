@@ -80,7 +80,7 @@ export const Candlestick = ({ data, width = 300, height = 90 }) => {
           left: Math.min(Math.max(hover.x * 1 - 70, 4), width - 140),
           top: 4,
         }}>
-          {hover.label || `M${hover.idx + 1}`} · O {formatPct(hover.open)} H {formatPct(hover.high)} L {formatPct(hover.low)} C {formatPct(hover.close)}
+          {hover.label || `M${hover.idx + 1}`} · {formatPct(hover.close)}
         </div>
       )}
     </div>
