@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DATA_SOURCE, INDUSTRY_CHAIN, KEY_METRIC_GROUPS, KEY_METRICS, NEWS } from "./industry-board/data.js";
 import { MetricGroup, NewsFeed } from "./industry-board/metrics_news.jsx";
 import { SectorCard } from "./industry-board/sector.jsx";
@@ -10,6 +10,12 @@ const TWEAK_DEFAULTS = {
 };
 
 const cloneIndustryChain = () => JSON.parse(JSON.stringify(INDUSTRY_CHAIN));
+
+const collectTickers = (chain) => [
+  ...new Set(chain.flatMap((layer) => layer.sectors.flatMap((sector) => (
+    sector.companies.map((company) => company.ticker).filter(Boolean)
+  )))),
+];
 
 const formatSyncTime = (value) => {
   if (!value) return "NO QUOTE SYNC";
@@ -24,17 +30,99 @@ const formatSyncTime = (value) => {
   });
 };
 
-const quoteSourceSummary = Object.entries(DATA_SOURCE.quoteSourceCounts || {})
-  .map(([source, count]) => `${source} ${count}`)
-  .join(" · ");
+const mergeLiveQuotesIntoChain = (chain, quotes) => chain.map((layer) => ({
+  ...layer,
+  sectors: layer.sectors.map((sector) => {
+    const companies = sector.companies.map((company) => {
+      const quote = quotes[company.ticker];
+      const liveReset = {
+        ...company,
+        liveQuote: false,
+      };
+
+      if (!quote) return liveReset;
+
+      return {
+        ...liveReset,
+        name: quote.name || company.name,
+        price: quote.price ?? company.price,
+        open: quote.open ?? company.open,
+        high: quote.high ?? company.high,
+        low: quote.low ?? company.low,
+        prevClose: quote.prevClose ?? company.prevClose,
+        dailyChange: quote.dailyChange,
+        volume: quote.volume ?? company.volume,
+        turnover: quote.turnover ?? company.turnover,
+        quoteSource: quote.quoteSource || "futu-live",
+        quoteTime: quote.quoteTime,
+        liveQuote: true,
+      };
+    });
+    return recalculateSector(sector, companies);
+  }),
+}));
 
 export default function App() {
   const [convention, setConvention] = useState(TWEAK_DEFAULTS.colorConvention);
   const [industryChain, setIndustryChain] = useState(cloneIndustryChain);
+  const [quoteRuntime, setQuoteRuntime] = useState({
+    status: "static",
+    sourceCounts: DATA_SOURCE.quoteSourceCounts || {},
+    syncedAt: DATA_SOURCE.quoteSyncedAt,
+    coverage: DATA_SOURCE.quoteCoverage || 0,
+    requestedCount: DATA_SOURCE.companyCount || 0,
+    message: "Static generated quote snapshot",
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-convention", convention);
   }, [convention]);
+
+  const fetchLiveQuotes = useCallback(async () => {
+    const codes = collectTickers(industryChain);
+    setQuoteRuntime((current) => ({
+      ...current,
+      status: "loading",
+      message: "Fetching Futu market snapshot",
+      requestedCount: codes.length,
+    }));
+
+    try {
+      const response = await fetch("/api/industry-quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codes }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.stderr || "Futu quote fetch failed");
+      }
+
+      const quotes = payload.quotes || {};
+      setIndustryChain((currentChain) => mergeLiveQuotesIntoChain(currentChain, quotes));
+      setQuoteRuntime({
+        status: "live",
+        sourceCounts: payload.quoteSourceCounts || { "futu-live": payload.quoteCoverage || 0 },
+        syncedAt: payload.fetchedAt,
+        coverage: payload.quoteCoverage || 0,
+        requestedCount: payload.requestedCount || codes.length,
+        message: payload.quoteCoverage === payload.requestedCount
+          ? "Futu live snapshot loaded"
+          : `Futu loaded ${payload.quoteCoverage || 0}, missing ${Object.keys(payload.missing || {}).length}`,
+      });
+    } catch (error) {
+      setQuoteRuntime((current) => ({
+        ...current,
+        status: "error",
+        message: error.message,
+      }));
+    }
+  }, [industryChain]);
+
+  useEffect(() => {
+    fetchLiveQuotes();
+  }, []);
 
   const allSectors = useMemo(
     () => industryChain.flatMap((layer) => layer.sectors),
@@ -42,15 +130,15 @@ export default function App() {
   );
 
   const boardStats = useMemo(() => {
-    const getCurrentMonthChange = (sector) => sector.currentMonthChange ?? sector.averageChange;
-    const avgChange = allSectors.reduce((sum, sector) => sum + getCurrentMonthChange(sector), 0) / allSectors.length;
-    const sorted = [...allSectors].sort((a, b) => getCurrentMonthChange(b) - getCurrentMonthChange(a));
+    const getDailyChange = (sector) => sector.averageChange ?? 0;
+    const avgChange = allSectors.reduce((sum, sector) => sum + getDailyChange(sector), 0) / allSectors.length;
+    const sorted = [...allSectors].sort((a, b) => getDailyChange(b) - getDailyChange(a));
     return {
       avgChange,
       bestSector: sorted[0],
       worstSector: sorted[sorted.length - 1],
-      bestChange: getCurrentMonthChange(sorted[0]),
-      worstChange: getCurrentMonthChange(sorted[sorted.length - 1]),
+      bestChange: getDailyChange(sorted[0]),
+      worstChange: getDailyChange(sorted[sorted.length - 1]),
     };
   }, [allSectors]);
 
@@ -68,8 +156,16 @@ export default function App() {
     })));
   };
 
-  const quoteSyncLabel = formatSyncTime(DATA_SOURCE.quoteSyncedAt);
-  const quoteCoverageLabel = `${DATA_SOURCE.quoteCoverage || 0}/${DATA_SOURCE.companyCount || 0}`;
+  const quoteSourceSummary = Object.entries(quoteRuntime.sourceCounts || {})
+    .map(([source, count]) => `${source} ${count}`)
+    .join(" · ");
+  const quoteSyncLabel = formatSyncTime(quoteRuntime.syncedAt || DATA_SOURCE.quoteSyncedAt);
+  const quoteCoverageLabel = `${quoteRuntime.coverage || 0}/${quoteRuntime.requestedCount || DATA_SOURCE.companyCount || 0}`;
+  const quoteChipLabel = quoteRuntime.status === "live"
+    ? "FUTU LIVE"
+    : quoteRuntime.status === "loading"
+      ? "FETCHING FUTU"
+      : "STATIC SNAPSHOT";
 
   return (
     <div className="dashboard">
@@ -83,12 +179,12 @@ export default function App() {
         </div>
 
         <div className="topbar-right">
-          <div className="live-chip" title={quoteSourceSummary || DATA_SOURCE.quoteSource}>
+          <div className={`live-chip ${quoteRuntime.status}`} title={`${quoteRuntime.message} · ${quoteSourceSummary || DATA_SOURCE.quoteSource}`}>
             <span className="pulse-dot" />
-            QUOTE SNAPSHOT · {quoteCoverageLabel} · {quoteSyncLabel}
+            {quoteChipLabel} · {quoteCoverageLabel} · {quoteSyncLabel}
           </div>
           <div className="topbar-stat">
-            <span className="lbl">Sectors Avg Month</span>
+            <span className="lbl">Sectors Avg Today</span>
             <span
               className="val"
               style={{ color: boardStats.avgChange >= 0 ? "var(--up)" : "var(--down)" }}
@@ -133,6 +229,17 @@ export default function App() {
             </button>
           </div>
         </div>
+        <div className="control-group quote-control">
+          <span className={`quote-status ${quoteRuntime.status}`}>{quoteRuntime.message}</span>
+          <button
+            className="quote-refresh-btn"
+            disabled={quoteRuntime.status === "loading"}
+            onClick={fetchLiveQuotes}
+            type="button"
+          >
+            {quoteRuntime.status === "loading" ? "Refreshing" : "Refresh Futu"}
+          </button>
+        </div>
       </div>
 
       <main>
@@ -140,7 +247,7 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>L0-L2 主干栈 · Industry Chain</h2>
-              <span className="sub">排序来自 L0-L2stocks.xlsx，价格来自 Futu 快照 + fallback</span>
+              <span className="sub">排序来自 L0-L2stocks.xlsx，价格启动时从本机 Futu OpenD 拉取；失败则保留静态快照</span>
               <span className="num">{allSectors.length} SECTORS</span>
             </div>
           </div>

@@ -36,8 +36,8 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
   const visibleCompanies = expanded || editing
     ? sector.companies
     : sector.companies.slice(0, VISIBLE_COMPANY_LIMIT);
-  const currentMonthChange = sector.currentMonthChange ?? sector.averageChange;
-  const avgUp = currentMonthChange >= 0;
+  const liveDailyChange = sector.averageChange ?? 0;
+  const avgUp = liveDailyChange >= 0;
   const monthlyCandles = useMemo(
     () => (sector.monthlyTrend || []).slice(-6),
     [sector.monthlyTrend],
@@ -78,9 +78,9 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
           <div className="sector-desc">{sector.summary}</div>
         </div>
         <div>
-          <div className="sector-change-lbl">Current Month Avg</div>
+          <div className="sector-change-lbl">Live Daily Avg</div>
           <div className={`sector-change ${avgUp ? "up" : "down"}`}>
-            {formatPct(currentMonthChange)}
+            {formatPct(liveDailyChange)}
           </div>
         </div>
       </div>
@@ -122,8 +122,8 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
         {visibleCompanies.map((company) => (
           <div
             key={company.ticker}
-            className="company-row"
-            title={`${company.ticker} · ${company.quoteSource || "workbook"}${company.quoteTime ? ` · ${company.quoteTime}` : ""}`}
+            className={`company-row ${company.liveQuote === false ? "stale-quote" : ""}`}
+            title={`${company.ticker} · ${company.quoteSource || "workbook"}${company.quoteTime ? ` · ${company.quoteTime}` : ""}${company.liveQuote === false ? " · not refreshed in latest Futu fetch" : ""}`}
           >
             <span className="company-rank">{company.rank}</span>
             <div>

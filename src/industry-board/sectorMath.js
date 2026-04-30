@@ -129,8 +129,13 @@ export const recalculateSector = (sector, companies) => {
     };
   });
 
+  const liveRefreshApplied = rankedCompanies.some((company) => company.liveQuote === true || company.liveQuote === false);
+  const eligibleForSnapshotStats = (company) => (
+    isFiniteNumber(company.dailyChange)
+    && (!liveRefreshApplied || company.liveQuote === true)
+  );
   const movers = rankedCompanies
-    .filter((company) => isFiniteNumber(company.dailyChange))
+    .filter(eligibleForSnapshotStats)
     .sort((a, b) => a.dailyChange - b.dailyChange);
   const validChanges = movers.map((company) => company.dailyChange);
   const leader = movers[movers.length - 1] || null;

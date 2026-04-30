@@ -197,6 +197,23 @@ body {
   text-transform: uppercase;
   font-weight: 600;
 }
+.live-chip.loading {
+  background: rgba(0, 113, 227, 0.08);
+  border-color: rgba(0, 113, 227, 0.18);
+  color: var(--accent);
+}
+.live-chip.error,
+.live-chip.static {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.24);
+  color: var(--amber);
+}
+.live-chip.error .pulse-dot,
+.live-chip.static .pulse-dot {
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.22);
+  animation: none;
+}
 
 /* ====== Section shell ====== */
 .section {
@@ -291,6 +308,41 @@ body {
   background: var(--bg-2);
   color: var(--text-hi);
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.quote-control {
+  min-height: 34px;
+}
+.quote-status {
+  max-width: 360px;
+  color: var(--text-lo);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.quote-status.live {
+  color: var(--up);
+}
+.quote-status.error {
+  color: var(--amber);
+}
+.quote-refresh-btn {
+  height: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  background: var(--bg-2);
+  color: var(--text-md);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 12px;
+}
+.quote-refresh-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.quote-refresh-btn:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 /* ====== Industry chain ====== */
@@ -533,6 +585,9 @@ body {
 }
 .company-row:hover {
   background: var(--bg-hover);
+}
+.company-row.stale-quote {
+  opacity: 0.62;
 }
 .company-rank {
   color: var(--text-lo);
