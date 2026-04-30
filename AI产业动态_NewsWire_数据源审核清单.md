@@ -29,6 +29,7 @@ News Wire 第一阶段只做 P0 事实源，不纳入 P1、付费媒体、投研
 | SEC EDGAR watchlist | 只维护 AI 私有/上市相关公司，不把核心持仓或全市场公司塞进去 |
 | 代码白名单 | 已固化在 `src/industry-board/newsWireSources.js` |
 | 同步脚本 | `npm run sync:news` |
+| 强制翻译同步 | `DEEPL_API_KEY=... npm run sync:news:translate` |
 | 生成数据 | `src/industry-board/generatedNewsWire.js` |
 
 ## 当前状态
@@ -151,7 +152,7 @@ News Wire 第一阶段只做 P0 事实源，不纳入 P1、付费媒体、投研
 
 | 环节 | 决策 |
 |---|---|
-| 翻译/摘要 | 默认服务端或离线批处理生成，不放到浏览器运行时即时生成 |
+| 翻译/摘要 | 默认服务端或离线批处理生成，不放到浏览器运行时即时生成；默认 provider 为 DeepL API，目标语言 `ZH-HANS`，可用 `DEEPL_API_KEY` / `DEEPL_API_URL` / `DEEPL_TARGET_LANG` 配置；如需回退 OpenAI，可显式设置 `NEWS_WIRE_TRANSLATION_PROVIDER=openai_responses_api` |
 | 翻译/摘要输入 | 只基于标题、链接、来源、发布时间和原始摘要/短 snippet，不抓全文 |
 | 失败处理 | adapter 抓取失败不阻塞页面；保留上一次成功结果和抓取状态 |
 | SpaceX | 单独弱提示，不和 OpenAI/NVIDIA/Microsoft 等核心 AI 源同权重展示 |
@@ -170,11 +171,12 @@ News Wire 第一阶段只做 P0 事实源，不纳入 P1、付费媒体、投研
 | 去重 | 已实现 | canonical host + title hash |
 | 低信号过滤 | 已实现 | 过滤教程、活动条款、泛产品教育页等非产业动态 |
 | 不抓全文 | 已实现 | 只写入 title/link/source/date/short snippet 和生成字段 |
-| 翻译/摘要 | 批处理接口已定，当前为 fallback | 目前没有外部翻译 provider；`titleZh/summaryZh` 先回退到源语言字段 |
+| 翻译/摘要 | 已切换 DeepL API provider | 当前本机缺少 `DEEPL_API_KEY` 时会明确标记 `missing_deepl_api_key`；有 key 时生成 `titleZh/summaryZh`；OpenAI provider 仅作为显式回退 |
+| 原文打开 | 已调整 | 前端点击整条新闻通过 `window.open` 打开原始 URL；SEC filing 改为 `sec.gov` viewer URL，避免直链归档 HTML |
 | Tesla/SpaceX 浏览器 adapter | 口径已配置，执行未接入脚本 | 当前同步脚本不会启动浏览器，只记录 browser adapter 待执行 |
 | SEC EDGAR watchlist | 已实现初版 | CoreWeave、NVIDIA、AMD、Microsoft、Alphabet、Amazon、Meta、Tesla |
 
-当前最近一次同步结果：P0 快照 97 条，13 个源完成抓取，1 个源被站点拒绝。Tesla/SpaceX 因需要浏览器 adapter，当前记录为 accepted-but-not-executed。
+当前最近一次同步结果：P0 快照 98 条，13 个源完成抓取，1 个源被站点拒绝。Tesla/SpaceX 因需要浏览器 adapter，当前记录为 accepted-but-not-executed。当前本机未配置 `DEEPL_API_KEY`，因此不能生成真实简中翻译。
 
 ## 源校验记录
 

@@ -13,6 +13,14 @@ const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const outputPath = path.join(rootDir, "src", "industry-board", "generatedNewsWire.js");
 const now = new Date();
 const cutoff = new Date(now.getTime() - NEWS_WIRE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+const translationProvider = process.env.NEWS_WIRE_TRANSLATION_PROVIDER
+  || NEWS_WIRE_PROCESSING_POLICY.translationProvider
+  || "deepl_api";
+const translationTargetLang = process.env.DEEPL_TARGET_LANG
+  || NEWS_WIRE_PROCESSING_POLICY.defaultTranslationTargetLang
+  || "ZH-HANS";
+const openAiTranslationModel = process.env.NEWS_WIRE_TRANSLATION_MODEL || "gpt-5-mini";
+const requireTranslation = process.env.NEWS_WIRE_REQUIRE_TRANSLATION === "1";
 
 const USER_AGENT = [
   "ai-investment-dashboard-newswire/0.1",
@@ -188,9 +196,6 @@ const buildItem = (source, raw, index) => {
   const severity = inferSeverity(source, text);
   const tags = inferTags(text);
   const generatedSummary = sourceSummary || `${source.name} official update. Open the source link to verify the details.`;
-  const summaryZh = sourceSummary
-    ? sourceSummary
-    : `${source.name} 官方更新；请打开原文确认细节。`;
 
   return {
     id: `${source.id}_${publishedDate ? publishedDate.toISOString().slice(0, 10) : "undated"}_${index}_${Math.abs(hash(`${title}${url}`))}`,
@@ -198,7 +203,7 @@ const buildItem = (source, raw, index) => {
     severity,
     time: relativeTime(publishedDate),
     title,
-    titleZh: title,
+    titleZh: null,
     source: source.name,
     sourceId: source.id,
     sourceType: source.sourceType,
@@ -206,12 +211,10 @@ const buildItem = (source, raw, index) => {
     url,
     tags,
     summary: generatedSummary,
-    summaryZh,
+    summaryZh: null,
     publishedAt: publishedDate ? publishedDate.toISOString() : null,
     fetchedAt: now.toISOString(),
-    translationStatus: NEWS_WIRE_PROCESSING_POLICY.translationSummaryMode === "server_batch"
-      ? "source_language_fallback"
-      : "not_configured",
+    translationStatus: "pending",
     dedupeKey: normalizeDedupeKey(title, url),
   };
 };
@@ -307,7 +310,10 @@ const fetchSecEdgarItems = async (source) => {
 
       const accessionNoDashes = accession.replace(/-/g, "");
       const companyCik = String(company.cik).replace(/^0+/, "");
-      const filingUrl = `https://www.sec.gov/Archives/edgar/data/${companyCik}/${accessionNoDashes}/${primaryDocs[index] || ""}`;
+      const archivePath = `/Archives/edgar/data/${companyCik}/${accessionNoDashes}/${primaryDocs[index] || ""}`;
+      const filingUrl = primaryDocs[index]
+        ? `https://www.sec.gov/ixviewer/doc/action?doc=${archivePath}`
+        : `https://www.sec.gov/Archives/edgar/data/${companyCik}/${accessionNoDashes}/`;
       const item = buildItem(source, {
         title: `${company.name} filed ${form}`,
         url: filingUrl,
@@ -389,6 +395,281 @@ const dedupeItems = (items) => {
     });
 };
 
+const chunkItems = (items, chunkSize) => {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+};
+
+const deeplTranslateUrl = () => {
+  if (process.env.DEEPL_API_URL) return process.env.DEEPL_API_URL;
+  return process.env.DEEPL_API_KEY?.endsWith(":fx")
+    ? "https://api-free.deepl.com/v2/translate"
+    : "https://api.deepl.com/v2/translate";
+};
+
+const compactTranslation = (value = "", maxLength = 120) => {
+  const text = stripHtml(value);
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}...`;
+};
+
+const translateChunkWithDeepL = async (chunk) => {
+  const texts = chunk.flatMap((item) => [
+    item.title,
+    item.summary,
+  ]);
+
+  const response = await fetch(deeplTranslateUrl(), {
+    method: "POST",
+    headers: {
+      Authorization: `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
+      "Content-Type": "application/json",
+      "User-Agent": USER_AGENT,
+    },
+    body: JSON.stringify({
+      text: texts,
+      source_lang: "EN",
+      target_lang: translationTargetLang,
+      preserve_formatting: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`DeepL translation HTTP ${response.status}: ${body.slice(0, 300)}`);
+  }
+
+  const data = await response.json();
+  const translated = data.translations || [];
+  if (translated.length !== texts.length) {
+    throw new Error(`DeepL translation returned ${translated.length} texts for ${texts.length} inputs`);
+  }
+
+  return chunk.map((item, index) => ({
+    id: item.id,
+    titleZh: compactTranslation(translated[index * 2]?.text, 80),
+    summaryZh: compactTranslation(translated[(index * 2) + 1]?.text, 140),
+  }));
+};
+
+const responseText = (data) => {
+  if (typeof data.output_text === "string") return data.output_text;
+  return (data.output || [])
+    .flatMap((item) => item.content || [])
+    .map((content) => content.text || "")
+    .join("");
+};
+
+const extractJsonObject = (text) => {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) return JSON.parse(trimmed);
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    return JSON.parse(trimmed.slice(start, end + 1));
+  }
+  throw new Error("translation response did not contain JSON");
+};
+
+const translateChunkWithOpenAI = async (chunk) => {
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: openAiTranslationModel,
+      input: [
+        {
+          role: "developer",
+          content: [
+            {
+              type: "input_text",
+              text: [
+                "You translate AI industry news metadata into concise Simplified Chinese.",
+                "Do not add facts not present in the input.",
+                "Keep company/product names in English when that is standard in Chinese finance writing.",
+                "For titleZh, produce a natural headline under 42 Chinese characters when possible.",
+                "For summaryZh, produce one concise sentence under 80 Chinese characters when possible.",
+                "Return JSON only.",
+              ].join("\n"),
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: JSON.stringify({
+                items: chunk.map((item) => ({
+                  id: item.id,
+                  title: item.title,
+                  summary: item.summary,
+                  source: item.source,
+                  category: item.category,
+                })),
+              }),
+            },
+          ],
+        },
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "news_wire_translations",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            required: ["items"],
+            properties: {
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["id", "titleZh", "summaryZh"],
+                  properties: {
+                    id: { type: "string" },
+                    titleZh: { type: "string" },
+                    summaryZh: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`OpenAI translation HTTP ${response.status}: ${body.slice(0, 300)}`);
+  }
+
+  const data = await response.json();
+  return extractJsonObject(responseText(data)).items || [];
+};
+
+const applyTranslations = async (items) => {
+  if (translationProvider === "none") {
+    return {
+      items: items.map((item) => ({
+        ...item,
+        translationStatus: "translation_disabled",
+      })),
+      status: {
+        ok: false,
+        provider: translationProvider,
+        translatedCount: 0,
+        message: "News Wire translation is disabled.",
+      },
+    };
+  }
+
+  if (translationProvider === "deepl_api") {
+    if (!process.env.DEEPL_API_KEY) {
+      if (requireTranslation) {
+        throw new Error("DEEPL_API_KEY is required for News Wire translation.");
+      }
+      return {
+        items: items.map((item) => ({
+          ...item,
+          translationStatus: "missing_deepl_api_key",
+        })),
+        status: {
+          ok: false,
+          provider: translationProvider,
+          targetLang: translationTargetLang,
+          translatedCount: 0,
+          message: "DEEPL_API_KEY is not set; Simplified Chinese translation was not generated.",
+        },
+      };
+    }
+
+    const translations = new Map();
+    for (const chunk of chunkItems(items, 20)) {
+      const translatedItems = await translateChunkWithDeepL(chunk);
+      translatedItems.forEach((item) => translations.set(item.id, item));
+    }
+
+    return {
+      items: items.map((item) => {
+        const translated = translations.get(item.id);
+        if (!translated) return { ...item, translationStatus: "translation_missing" };
+        return {
+          ...item,
+          titleZh: translated.titleZh,
+          summaryZh: translated.summaryZh,
+          translationStatus: "translated",
+        };
+      }),
+      status: {
+        ok: true,
+        provider: translationProvider,
+        targetLang: translationTargetLang,
+        translatedCount: translations.size,
+        message: "Generated Simplified Chinese title and summary translations from stored metadata only.",
+      },
+    };
+  }
+
+  if (translationProvider !== "openai_responses_api") {
+    throw new Error(`Unsupported NEWS_WIRE_TRANSLATION_PROVIDER: ${translationProvider}`);
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    if (requireTranslation) {
+      throw new Error("OPENAI_API_KEY is required for News Wire translation.");
+    }
+    return {
+      items: items.map((item) => ({
+        ...item,
+        translationStatus: "missing_openai_api_key",
+      })),
+      status: {
+        ok: false,
+        provider: translationProvider,
+        model: openAiTranslationModel,
+        translatedCount: 0,
+        message: "OPENAI_API_KEY is not set; Simplified Chinese translation was not generated.",
+      },
+    };
+  }
+
+  const translations = new Map();
+  for (const chunk of chunkItems(items, 20)) {
+    const translatedItems = await translateChunkWithOpenAI(chunk);
+    translatedItems.forEach((item) => translations.set(item.id, item));
+  }
+
+  return {
+    items: items.map((item) => {
+      const translated = translations.get(item.id);
+      if (!translated) return { ...item, translationStatus: "translation_missing" };
+      return {
+        ...item,
+        titleZh: translated.titleZh,
+        summaryZh: translated.summaryZh,
+        translationStatus: "translated",
+      };
+    }),
+    status: {
+      ok: true,
+      provider: translationProvider,
+      model: openAiTranslationModel,
+      translatedCount: translations.size,
+      message: "Generated Simplified Chinese title and summary fields from stored metadata only.",
+    },
+  };
+};
+
 const sourceStatusForError = (source, error) => ({
   sourceId: source.id,
   source: source.name,
@@ -419,7 +700,9 @@ const main = async () => {
     }
   }
 
-  const items = dedupeItems(allItems);
+  const rawItems = dedupeItems(allItems);
+  const translationResult = await applyTranslations(rawItems);
+  const items = translationResult.items;
   const metadata = {
     generatedAt: now.toISOString(),
     retentionDays: NEWS_WIRE_STORAGE_POLICY.retentionDays,
@@ -428,6 +711,7 @@ const main = async () => {
     status: sourceStatuses.some((status) => status.ok && status.itemCount > 0) ? "ok" : "empty",
     message: "P0 News Wire snapshot. Full article text is not stored.",
     processingPolicy: NEWS_WIRE_PROCESSING_POLICY,
+    translation: translationResult.status,
     sourceStatuses,
   };
 

@@ -59,9 +59,26 @@ const NewsItem = ({ n }) => {
   const title = n.titleZh || n.title;
   const summary = n.summaryZh || n.summary;
   const isWeakHint = n.displayStrength === "weak_hint";
+  const openOriginal = () => {
+    if (!n.url) return;
+    window.open(n.url, "_blank", "noopener,noreferrer");
+  };
+  const onKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openOriginal();
+    }
+  };
 
   return (
-    <a className={`news-item ${isWeakHint ? "weak-hint" : ""}`} href={n.url} target="_blank" rel="noreferrer">
+    <article
+      className={`news-item ${isWeakHint ? "weak-hint" : ""}`}
+      role="link"
+      tabIndex={0}
+      onClick={openOriginal}
+      onKeyDown={onKeyDown}
+      title="Open original source"
+    >
       <div className="news-time">{n.time}</div>
       <div className={`news-bar ${n.severity}`} />
       <div className="news-body">
@@ -73,7 +90,7 @@ const NewsItem = ({ n }) => {
         <div className="news-title">{title}</div>
         <div className="news-summary">{summary}</div>
       </div>
-    </a>
+    </article>
   );
 };
 
