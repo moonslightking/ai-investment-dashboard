@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DATA_SOURCE, INDUSTRY_CHAIN, KEY_METRIC_GROUPS, KEY_METRICS, NEWS } from "./industry-board/data.js";
+import {
+  DATA_SOURCE,
+  INDUSTRY_CHAIN,
+  KEY_METRIC_GROUPS,
+  KEY_METRICS,
+  NEWS,
+  NEWS_WIRE_DATA_SOURCE,
+} from "./industry-board/data.js";
 import { MetricGroup, NewsFeed } from "./industry-board/metrics_news.jsx";
 import { SectorCard } from "./industry-board/sector.jsx";
 import { recalculateSector } from "./industry-board/sectorMath.js";
@@ -299,8 +306,8 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>AI 产业动态 · News Wire</h2>
-              <span className="sub">当前仍为示例动态，尚未与 workbook 同步</span>
-              <span className="num">{NEWS.length} ITEMS</span>
+              <span className="sub">P0 sources only · 30-day window · title/link/snippet, no full-text scraping</span>
+              <span className="num">{NEWS.length} ITEMS · {NEWS_WIRE_DATA_SOURCE.status?.toUpperCase?.() || "STATIC"}</span>
             </div>
           </div>
           <NewsFeed items={NEWS} />

@@ -56,19 +56,24 @@ export const MetricGroup = ({ group, metrics }) => (
 );
 
 const NewsItem = ({ n }) => {
+  const title = n.titleZh || n.title;
+  const summary = n.summaryZh || n.summary;
+  const isWeakHint = n.displayStrength === "weak_hint";
+
   return (
-    <div className="news-item">
+    <a className={`news-item ${isWeakHint ? "weak-hint" : ""}`} href={n.url} target="_blank" rel="noreferrer">
       <div className="news-time">{n.time}</div>
       <div className={`news-bar ${n.severity}`} />
       <div className="news-body">
         <div className="news-meta">
           <span className={`news-cat ${n.category}`}>{n.category}</span>
           <span className="news-source">{n.source}</span>
+          {isWeakHint && <span className="news-hint">WEAK SIGNAL</span>}
         </div>
-        <div className="news-title">{n.title}</div>
-        <div className="news-summary">{n.summary}</div>
+        <div className="news-title">{title}</div>
+        <div className="news-summary">{summary}</div>
       </div>
-    </div>
+    </a>
   );
 };
 
@@ -93,7 +98,9 @@ export const NewsFeed = ({ items }) => {
         ))}
       </div>
       <div className="news-list">
-        {filtered.map(n => <NewsItem key={n.id} n={n} />)}
+        {filtered.length > 0
+          ? filtered.map(n => <NewsItem key={n.id} n={n} />)
+          : <div className="news-empty">No P0 items in the current 30-day window.</div>}
       </div>
     </div>
   );

@@ -2,9 +2,24 @@ import {
   DATA_SOURCE as GENERATED_DATA_SOURCE,
   INDUSTRY_CHAIN as GENERATED_INDUSTRY_CHAIN,
 } from "./generatedIndustryData.js";
+import {
+  NEWS as GENERATED_NEWS,
+  NEWS_WIRE_DATA_SOURCE as GENERATED_NEWS_WIRE_DATA_SOURCE,
+} from "./generatedNewsWire.js";
+export {
+  NEWS_WIRE_PHASE,
+  NEWS_WIRE_PROCESSING_POLICY,
+  NEWS_WIRE_RETENTION_DAYS,
+  NEWS_WIRE_SEC_EDGAR_WATCHLIST,
+  NEWS_WIRE_SOURCES,
+  NEWS_WIRE_SOURCE_IDS,
+  NEWS_WIRE_STORAGE_POLICY,
+} from "./newsWireSources.js";
 
 export const INDUSTRY_CHAIN = GENERATED_INDUSTRY_CHAIN;
 export const DATA_SOURCE = GENERATED_DATA_SOURCE;
+export const NEWS = GENERATED_NEWS;
+export const NEWS_WIRE_DATA_SOURCE = GENERATED_NEWS_WIRE_DATA_SOURCE;
 
 // ============ KEY METRICS ============
 // The second dashboard section tracks signal definitions and source hygiene.
@@ -270,129 +285,5 @@ export const KEY_METRICS = [
       { label: "CBRE Data Centers", url: "https://www.cbre.com/insights/reports/17887575722" },
     ],
     guardrail: "紧缺不等于投资收益；最后要落到谁拿租金、谁扩毛利、谁承担折旧。",
-  },
-];
-
-// ============ NEWS ============
-export const NEWS = [
-  {
-    id: 1,
-    category: "模型",
-    severity: "high",
-    time: "2h",
-    title: "Anthropic 发布 Claude 4.5 Opus，上下文扩展至 2M tokens",
-    source: "Anthropic",
-    tags: ["Claude", "大模型"],
-    summary: "新旗舰模型在 SWE-bench 上达到 74.8%，API 定价较 Claude 4 Sonnet 降低 22%。",
-  },
-  {
-    id: 2,
-    category: "芯片",
-    severity: "high",
-    time: "5h",
-    title: "NVIDIA 预告 Rubin R200 将于 2026 Q3 出货",
-    source: "路透",
-    tags: ["NVDA", "Rubin"],
-    summary: "首发合作伙伴包括 Microsoft 和 CoreWeave，预计带宽较 B200 提升 3.3x。",
-  },
-  {
-    id: 3,
-    category: "投资",
-    severity: "medium",
-    time: "8h",
-    title: "OpenAI 完成 400 亿美元新一轮融资，估值 5000 亿",
-    source: "FT",
-    tags: ["OpenAI", "融资"],
-    summary: "软银领投，微软参与增资，将主要用于 Stargate 数据中心建设。",
-  },
-  {
-    id: 4,
-    category: "并购",
-    severity: "medium",
-    time: "1d",
-    title: "AMD 拟以 120 亿美元收购光模块厂商 Coherent",
-    source: "WSJ",
-    tags: ["AMD", "COHR", "M&A"],
-    summary: "强化 AI 网络和硅光布局，交易预计 2026 年下半年完成。",
-  },
-  {
-    id: 5,
-    category: "模型",
-    severity: "medium",
-    time: "1d",
-    title: "Google DeepMind 发布 Gemini 3.0，原生视频理解",
-    source: "DeepMind",
-    tags: ["Gemini", "Google"],
-    summary: "多模态能力显著提升，长视频理解基准 VideoMME 刷新 SOTA。",
-  },
-  {
-    id: 6,
-    category: "政策",
-    severity: "high",
-    time: "2d",
-    title: "美商务部放宽先进节点设备对华出口管制",
-    source: "Commerce.gov",
-    tags: ["政策", "半导体"],
-    summary: "14nm 以上设备解禁，对台积电、ASML 的亚洲业务构成利好。",
-  },
-  {
-    id: 7,
-    category: "芯片",
-    severity: "medium",
-    time: "2d",
-    title: "台积电 3nm 产能利用率达 98%，2nm 提前试产",
-    source: "DigiTimes",
-    tags: ["TSMC", "2nm"],
-    summary: "苹果、英伟达、AMD 均为首批 2nm 客户。",
-  },
-  {
-    id: 8,
-    category: "应用",
-    severity: "low",
-    time: "3d",
-    title: "Cursor 周活用户突破 500 万，企业版签约 Stripe",
-    source: "The Information",
-    tags: ["Cursor", "编码"],
-    summary: "AI 编码助手龙头增长迅速，ARR 突破 4 亿美元。",
-  },
-  {
-    id: 9,
-    category: "电力",
-    severity: "medium",
-    time: "3d",
-    title: "微软与 Constellation 签订 20 年核电采购协议",
-    source: "Bloomberg",
-    tags: ["MSFT", "核电"],
-    summary: "Three Mile Island 重启，总容量 835 MW 专供 Azure 数据中心。",
-  },
-  {
-    id: 10,
-    category: "机器人",
-    severity: "medium",
-    time: "4d",
-    title: "Figure AI 发布 Figure 03，首次进入家庭场景试点",
-    source: "Figure",
-    tags: ["Figure", "机器人"],
-    summary: "与宝马合作 2.0 版本同步落地，工厂部署数突破 1000 台。",
-  },
-  {
-    id: 11,
-    category: "模型",
-    severity: "low",
-    time: "5d",
-    title: "Meta 发布 Llama 4.5 多模态开源模型",
-    source: "Meta AI",
-    tags: ["Llama", "开源"],
-    summary: "参数规模 600B，在 MATH-500 上超越 GPT-4 Turbo。",
-  },
-  {
-    id: 12,
-    category: "投资",
-    severity: "high",
-    time: "5d",
-    title: "xAI 融资 100 亿美元，估值达 2000 亿",
-    source: "Bloomberg",
-    tags: ["xAI", "融资"],
-    summary: "用于建设 Memphis 超算中心第二期，目标 1M 卡集群。",
   },
 ];

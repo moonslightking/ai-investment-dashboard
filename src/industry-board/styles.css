@@ -957,9 +957,14 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   cursor: pointer;
   transition: background 0.15s;
+  color: inherit;
+  text-decoration: none;
 }
 .news-item:hover {
   background: rgba(0, 113, 227, 0.03);
+}
+.news-item.weak-hint {
+  opacity: 0.82;
 }
 .news-time {
   font-family: var(--font-mono);
@@ -1000,6 +1005,14 @@ body {
   color: var(--text-md);
   font-weight: 500;
 }
+.news-hint {
+  color: var(--text-lo);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
 .news-cat {
   padding: 2px 7px;
   border-radius: 4px;
@@ -1024,6 +1037,13 @@ body {
   color: var(--text-md);
   line-height: 1.55;
   letter-spacing: 0;
+}
+.news-empty {
+  grid-column: 1 / -1;
+  padding: 22px 4px;
+  color: var(--text-lo);
+  font-size: 12px;
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ====== Tweaks panel ====== */
