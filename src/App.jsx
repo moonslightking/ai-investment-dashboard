@@ -67,6 +67,7 @@ export default function App() {
   const [industryChain, setIndustryChain] = useState(cloneIndustryChain);
   const [quoteRuntime, setQuoteRuntime] = useState({
     status: "static",
+    source: DATA_SOURCE.quoteSource || "static",
     sourceCounts: DATA_SOURCE.quoteSourceCounts || {},
     syncedAt: DATA_SOURCE.quoteSyncedAt,
     coverage: DATA_SOURCE.quoteCoverage || 0,
@@ -83,7 +84,7 @@ export default function App() {
     setQuoteRuntime((current) => ({
       ...current,
       status: "loading",
-      message: "Fetching Futu market snapshot",
+      message: "Fetching live quote snapshot",
       requestedCount: codes.length,
     }));
 
@@ -103,13 +104,14 @@ export default function App() {
       setIndustryChain((currentChain) => mergeLiveQuotesIntoChain(currentChain, quotes));
       setQuoteRuntime({
         status: "live",
+        source: payload.source || "live",
         sourceCounts: payload.quoteSourceCounts || { "futu-live": payload.quoteCoverage || 0 },
         syncedAt: payload.fetchedAt,
         coverage: payload.quoteCoverage || 0,
         requestedCount: payload.requestedCount || codes.length,
         message: payload.quoteCoverage === payload.requestedCount
-          ? "Futu live snapshot loaded"
-          : `Futu loaded ${payload.quoteCoverage || 0}, missing ${Object.keys(payload.missing || {}).length}`,
+          ? `${payload.source || "Live"} quote snapshot loaded`
+          : `${payload.source || "Live"} loaded ${payload.quoteCoverage || 0}, missing ${Object.keys(payload.missing || {}).length}`,
       });
     } catch (error) {
       setQuoteRuntime((current) => ({
@@ -162,9 +164,9 @@ export default function App() {
   const quoteSyncLabel = formatSyncTime(quoteRuntime.syncedAt || DATA_SOURCE.quoteSyncedAt);
   const quoteCoverageLabel = `${quoteRuntime.coverage || 0}/${quoteRuntime.requestedCount || DATA_SOURCE.companyCount || 0}`;
   const quoteChipLabel = quoteRuntime.status === "live"
-    ? "FUTU LIVE"
+    ? `${String(quoteRuntime.source || "live").toUpperCase()} LIVE`
     : quoteRuntime.status === "loading"
-      ? "FETCHING FUTU"
+      ? "FETCHING LIVE"
       : "STATIC SNAPSHOT";
 
   return (
@@ -237,7 +239,7 @@ export default function App() {
             onClick={fetchLiveQuotes}
             type="button"
           >
-            {quoteRuntime.status === "loading" ? "Refreshing" : "Refresh Futu"}
+            {quoteRuntime.status === "loading" ? "Refreshing" : "Refresh Quotes"}
           </button>
         </div>
       </div>
@@ -247,7 +249,7 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>L0-L2 主干栈 · Industry Chain</h2>
-              <span className="sub">排序来自 L0-L2stocks.xlsx，价格启动时从本机 Futu OpenD 拉取；失败则保留静态快照</span>
+              <span className="sub">排序来自 L0-L2stocks.xlsx；本地优先 Futu OpenD，线上使用部署 API 拉取实时行情</span>
               <span className="num">{allSectors.length} SECTORS</span>
             </div>
           </div>
