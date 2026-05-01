@@ -6,6 +6,10 @@ import {
   NEWS as GENERATED_NEWS,
   NEWS_WIRE_DATA_SOURCE as GENERATED_NEWS_WIRE_DATA_SOURCE,
 } from "./generatedNewsWire.js";
+import {
+  KEY_METRIC_DATA,
+  KEY_METRIC_DATA_SOURCE,
+} from "./generatedKeyMetricData.js";
 export {
   NEWS_WIRE_PHASE,
   NEWS_WIRE_PROCESSING_POLICY,
@@ -20,6 +24,7 @@ export const INDUSTRY_CHAIN = GENERATED_INDUSTRY_CHAIN;
 export const DATA_SOURCE = GENERATED_DATA_SOURCE;
 export const NEWS = GENERATED_NEWS;
 export const NEWS_WIRE_DATA_SOURCE = GENERATED_NEWS_WIRE_DATA_SOURCE;
+export { KEY_METRIC_DATA, KEY_METRIC_DATA_SOURCE };
 
 // ============ KEY METRICS ============
 // The second dashboard section tracks signal definitions and source hygiene.

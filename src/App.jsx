@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DATA_SOURCE,
   INDUSTRY_CHAIN,
+  KEY_METRIC_DATA,
+  KEY_METRIC_DATA_SOURCE,
   KEY_METRIC_GROUPS,
   KEY_METRICS,
   NEWS,
@@ -155,6 +157,7 @@ export default function App() {
     () => new Map(KEY_METRICS.map((metric) => [metric.id, metric])),
     [],
   );
+  const verifiedMetricCount = KEY_METRIC_DATA_SOURCE.coverage?.verified || Object.keys(KEY_METRIC_DATA).length;
 
   const updateSectorCompanies = (sectorId, companies) => {
     setIndustryChain((currentChain) => currentChain.map((layer) => ({
@@ -287,8 +290,8 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>关键数据追踪 · Key Metrics</h2>
-              <span className="sub">算力供需跟踪框架：需求体感、供给约束、扩产投入、价值捕获</span>
-              <span className="num">{KEY_METRICS.length} SIGNALS · {KEY_METRIC_GROUPS.length} GROUPS</span>
+              <span className="sub">前 4 个指标已接入真实快照：API 价格、GPU 云报价、AI capex、服务器 CPU</span>
+              <span className="num">{verifiedMetricCount}/{KEY_METRICS.length} VERIFIED · {KEY_METRIC_GROUPS.length} GROUPS</span>
             </div>
           </div>
           <div className="metric-groups">
@@ -296,6 +299,7 @@ export default function App() {
               <MetricGroup
                 key={group.id}
                 group={group}
+                metricData={KEY_METRIC_DATA}
                 metrics={group.metricIds.map((id) => keyMetricsById.get(id)).filter(Boolean)}
               />
             ))}

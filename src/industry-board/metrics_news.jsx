@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { MetricChart, toneClassName } from "./metricCharts.jsx";
 
 export const MetricCard = ({ m }) => {
+  const snapshot = m.data;
+
   return (
     <article className={`metric-card priority-${m.priority.toLowerCase()}`}>
       <div className="metric-head">
@@ -16,6 +19,40 @@ export const MetricCard = ({ m }) => {
         <span>Source {m.sourceGrade}</span>
       </div>
 
+      {snapshot && (
+        <div className={`metric-data-panel status-${snapshot.status}`}>
+          <div className="metric-data-top">
+            <span className="metric-data-status">{snapshot.status}</span>
+            <span className="metric-data-date">{snapshot.updatedAt}</span>
+          </div>
+          <div className="metric-headline-row">
+            <div>
+              <div className={`metric-headline-value ${toneClassName(snapshot.headline.tone)}`}>
+                {snapshot.headline.value}
+              </div>
+              <div className="metric-headline-label">{snapshot.headline.label}</div>
+            </div>
+            <div className={`metric-delta-pill ${toneClassName(snapshot.delta.tone)}`}>
+              <strong>{snapshot.delta.value}</strong>
+              <span>{snapshot.delta.label}</span>
+            </div>
+          </div>
+          {snapshot.headline.subvalue && (
+            <div className="metric-headline-subvalue">{snapshot.headline.subvalue}</div>
+          )}
+          <MetricChart chart={snapshot.chart} events={snapshot.events} />
+          <div className="metric-data-rows">
+            {snapshot.rows.map((row) => (
+              <div className="metric-data-row" key={row.label}>
+                <span>{row.label}</span>
+                <strong>{row.value}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="metric-source-note">{snapshot.sourceNote}</div>
+        </div>
+      )}
+
       <p className="metric-definition">{m.definition}</p>
 
       <div className="metric-watch">
@@ -25,7 +62,7 @@ export const MetricCard = ({ m }) => {
       </div>
 
       <div className="metric-sources" aria-label={`${m.title} data sources`}>
-        {m.sources.map((source) => (
+        {(snapshot?.sources || m.sources).map((source) => (
           <a key={source.label} href={source.url} target="_blank" rel="noreferrer">
             {source.label}
           </a>
@@ -37,7 +74,7 @@ export const MetricCard = ({ m }) => {
   );
 };
 
-export const MetricGroup = ({ group, metrics }) => (
+export const MetricGroup = ({ group, metricData, metrics }) => (
   <section className="metric-group" aria-labelledby={`metric-group-${group.id}`}>
     <div className="metric-group-head">
       <div>
@@ -49,7 +86,7 @@ export const MetricGroup = ({ group, metrics }) => (
     <p className="metric-group-subtitle">{group.subtitle}</p>
     <div className="metrics-grid">
       {metrics.map((metric) => (
-        <MetricCard key={metric.id} m={metric} />
+        <MetricCard key={metric.id} m={{ ...metric, data: metricData?.[metric.id] }} />
       ))}
     </div>
   </section>
