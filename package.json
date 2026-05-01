@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "sync:key-metrics": "node scripts/sync_key_metrics.js",
+    "sync:key-metrics:check": "node scripts/sync_key_metrics.js --check-sources",
     "sync:news": "node scripts/sync_news_wire.js",
     "sync:news:translate": "NEWS_WIRE_REQUIRE_TRANSLATION=1 node scripts/sync_news_wire.js"
   },
