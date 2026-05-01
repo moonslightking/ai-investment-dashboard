@@ -289,9 +289,9 @@ export default function App() {
         <section className="section">
           <div className="section-header">
             <div className="section-title">
-              <h2>关键数据追踪 · Key Metrics</h2>
-              <span className="sub">前 4 个指标已接入真实快照：API 价格、GPU 云报价、AI capex、服务器 CPU</span>
-              <span className="num">{verifiedMetricCount}/{KEY_METRICS.length} VERIFIED · {KEY_METRIC_GROUPS.length} GROUPS</span>
+              <h2>关键数据追踪</h2>
+              <span className="sub">前 4 个指标已接入真实快照：API 价格、GPU 云报价、AI 资本开支、服务器 CPU</span>
+              <span className="num">{verifiedMetricCount}/{KEY_METRICS.length} 已验证 · {KEY_METRIC_GROUPS.length} 组</span>
             </div>
           </div>
           <div className="metric-groups">

@@ -33,7 +33,7 @@ export const KEY_METRIC_GROUPS = [
   {
     id: "demand",
     title: "需求体感",
-    titleEn: "Demand Signals",
+    titleEn: "需求信号",
     subtitle: "前端限流、API 价格、模型使用份额，判断需求是否挤压可用算力。",
     metricIds: [
       "closed_model_limits",
@@ -45,7 +45,7 @@ export const KEY_METRIC_GROUPS = [
   {
     id: "supply",
     title: "供给约束",
-    titleEn: "Supply Bottlenecks",
+    titleEn: "供给瓶颈",
     subtitle: "GPU、服务器 CPU、HBM/封装/网络、电力与机房，定位真正卡在哪里。",
     metricIds: [
       "gpu_cloud_availability",
@@ -57,14 +57,14 @@ export const KEY_METRIC_GROUPS = [
   {
     id: "capex",
     title: "扩产投入",
-    titleEn: "Buildout & Absorption",
+    titleEn: "扩产与消化",
     subtitle: "资本开支与需求吸收配对看，避免只看到花钱看不到消化。",
     metricIds: ["ai_infra_capex", "ai_cloud_backlog"],
   },
   {
     id: "capture",
     title: "价值捕获",
-    titleEn: "Value Capture",
+    titleEn: "价值捕获",
     subtitle: "把算力紧缺转成收入、毛利、订单和估值弹性的公司池。",
     metricIds: ["value_capture"],
   },
@@ -80,7 +80,7 @@ export const KEY_METRICS = [
     frequency: "日更 / 事件触发",
     sourceGrade: "B",
     title: "闭源模型配额 / 限流变化",
-    titleEn: "Closed model usage limits",
+    titleEn: "闭源模型使用限制",
     definition: "跟踪 ChatGPT、Claude 等头部产品的小时配额、周配额、队列、临时限流和工具单独限额。",
     watch: ["额度更严或排队增加", "旗舰模型从宽松转向分层配额", "高价值工具被单独限额"],
     sources: [
@@ -99,7 +99,7 @@ export const KEY_METRICS = [
     frequency: "周更 / 变更触发",
     sourceGrade: "A",
     title: "闭源模型 API 有效价格",
-    titleEn: "Effective API pricing",
+    titleEn: "API 实际价格",
     definition: "跟踪 input、output、cached、batch、priority、tool/search 附加费，计算真实 token 成本。",
     watch: ["旗舰模型涨价或降折扣", "缓存/批处理折扣收窄", "推理型模型输出价格上移"],
     sources: [
@@ -119,7 +119,7 @@ export const KEY_METRICS = [
     frequency: "周更 / 季更",
     sourceGrade: "B+",
     title: "平台级 token 使用代理 / 份额变化",
-    titleEn: "Token usage proxies",
+    titleEn: "Token 使用代理指标",
     definition: "用开放平台份额、企业披露的 tokens processed、云侧 AI 使用强度替代不可得的全球 API 调用量。",
     watch: ["OpenRouter 份额变化", "大厂 tokens processed 披露", "模型路由从闭源转向低价或开源"],
     sources: [
@@ -138,7 +138,7 @@ export const KEY_METRICS = [
     frequency: "周更",
     sourceGrade: "B",
     title: "开源模型 adoption proxy",
-    titleEn: "Open-source model adoption",
+    titleEn: "开源模型采用情况",
     definition: "跟踪 Hugging Face 下载、衍生模型、开放模型平台份额和主要开源模型官方披露。",
     watch: ["Qwen/Llama/DeepSeek 下载与衍生数", "开放模型在路由平台占比", "闭源 API 需求被开源分流"],
     sources: [
@@ -157,7 +157,7 @@ export const KEY_METRICS = [
     frequency: "日更 / 周更",
     sourceGrade: "A-",
     title: "GPU 云租赁价格 + 可得性 + lead time",
-    titleEn: "GPU rental price and availability",
+    titleEn: "GPU 云租赁价格与可得性",
     definition: "跟踪 H200、B200/GB200 的 on-demand、reserved、spot、区域差异、最低承诺和 waitlist。",
     watch: ["单位 GPU 小时价格", "有价无货或起租门槛", "新一代集群交付周期"],
     sources: [
@@ -176,9 +176,9 @@ export const KEY_METRICS = [
     frequency: "季更 / 事件触发",
     sourceGrade: "A-",
     title: "服务器 CPU 数据",
-    titleEn: "Server CPU signals",
+    titleEn: "服务器 CPU 信号",
     definition: "单列跟踪通用云与推理基础设施里的 CPU 需求、x86/Arm/custom 份额迁移和实例供给扩张。",
-    watch: ["AMD Data Center / EPYC", "Intel DCAI / Xeon", "AWS Graviton、Google Axion、Azure Cobalt、阿里云倚天"],
+    watch: ["AMD 数据中心 / EPYC", "Intel DCAI / Xeon", "AWS Graviton、Google Axion、Azure Cobalt、阿里云倚天"],
     sources: [
       { label: "AMD IR", url: "https://ir.amd.com/news-events/press-releases" },
       { label: "Intel IR", url: "https://www.intc.com/news-events/press-releases" },
@@ -197,7 +197,7 @@ export const KEY_METRICS = [
     frequency: "月更 / 季更",
     sourceGrade: "B+",
     title: "HBM / 先进封装 / AI 网络器件供给",
-    titleEn: "HBM, packaging and AI networking",
+    titleEn: "HBM、封装与 AI 网络",
     definition: "跟踪 GPU 之外的硬约束：HBM、CoWoS/先进封装、800G/1.6T 光模块、AI 交换与互连。",
     watch: ["HBM sold-out 与 ASP", "先进封装扩产节奏", "AI networking 收入和订单"],
     sources: [
@@ -217,7 +217,7 @@ export const KEY_METRICS = [
     frequency: "月更 / 季更",
     sourceGrade: "A-",
     title: "数据中心 vacancy / pre-lease / 并网排队 / 电价",
-    titleEn: "Data center power and occupancy",
+    titleEn: "数据中心电力与出租率",
     definition: "跟踪 colocation vacancy、pre-lease、并网周期、PPA/批发电价和数据中心投运延迟。",
     watch: ["核心市场 vacancy 下探", "pre-lease 比例上升", "电力接入成为投运瓶颈"],
     sources: [
@@ -237,7 +237,7 @@ export const KEY_METRICS = [
     frequency: "季更",
     sourceGrade: "A",
     title: "美中头部厂商 AI infra capex + lease + depreciation",
-    titleEn: "AI infrastructure capex",
+    titleEn: "AI 基础设施资本开支",
     definition: "跟踪美国与中国头部企业的资本开支、finance lease、折旧摊销和 AI 基建投资指引。",
     watch: ["capex 总量与同比", "finance lease 增速", "折旧压力和投运节奏"],
     sources: [
@@ -260,7 +260,7 @@ export const KEY_METRICS = [
     frequency: "季更",
     sourceGrade: "A-",
     title: "AI 云 backlog / AI 收入 / tokens processed",
-    titleEn: "AI cloud absorption",
+    titleEn: "AI 云需求消化",
     definition: "用云订单、AI 收入、剩余履约义务和 tokens processed 验证资本开支是否被真实需求消化。",
     watch: ["AI 云收入贡献", "backlog / RPO 上修", "tokens processed 与客户数披露"],
     sources: [
@@ -280,7 +280,7 @@ export const KEY_METRICS = [
     frequency: "季更 / 事件触发",
     sourceGrade: "B+",
     title: "上下游价值捕获与利润率变化",
-    titleEn: "Value capture and margin transfer",
+    titleEn: "价值捕获与利润率传导",
     definition: "跟踪哪些环节把算力紧缺转成收入、毛利率、订单、预收款和估值弹性。",
     watch: ["GPU 云租赁商利用率和毛利", "HBM/网络/液冷/电力设备 backlog", "IDC 租金、预租和回报率"],
     sources: [

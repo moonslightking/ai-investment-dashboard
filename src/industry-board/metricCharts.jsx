@@ -38,7 +38,7 @@ const MetricBarChart = ({ chart }) => {
                   <div
                     className="metric-bar metric-bar-previous"
                     style={{ width: previousWidth }}
-                    title={`Previous ${item.previousDisplayValue || item.previousValue}`}
+                    title={`上期 ${item.previousDisplayValue || item.previousValue}`}
                   />
                 )}
                 <div
@@ -48,7 +48,7 @@ const MetricBarChart = ({ chart }) => {
               </div>
               {previousWidth && (
                 <div className="metric-bar-prev-label">
-                  Prior {item.previousDisplayValue || item.previousValue}
+                  上期 {item.previousDisplayValue || item.previousValue}
                 </div>
               )}
             </div>

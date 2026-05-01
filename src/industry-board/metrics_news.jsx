@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { MetricChart, toneClassName } from "./metricCharts.jsx";
 
+const STATUS_LABELS = {
+  verified: "已验证",
+  "mixed-proxy": "混合代理口径",
+  stale: "待刷新",
+  blocked: "来源受限",
+};
+
 export const MetricCard = ({ m }) => {
   const snapshot = m.data;
 
@@ -16,13 +23,13 @@ export const MetricCard = ({ m }) => {
       <div className="metric-meta-row">
         <span>{m.signalType}</span>
         <span>{m.frequency}</span>
-        <span>Source {m.sourceGrade}</span>
+        <span>来源等级 {m.sourceGrade}</span>
       </div>
 
       {snapshot && (
         <div className={`metric-data-panel status-${snapshot.status}`}>
           <div className="metric-data-top">
-            <span className="metric-data-status">{snapshot.status}</span>
+            <span className="metric-data-status">{STATUS_LABELS[snapshot.status] || snapshot.status}</span>
             <span className="metric-data-date">{snapshot.updatedAt}</span>
           </div>
           <div className="metric-headline-row">
@@ -61,7 +68,7 @@ export const MetricCard = ({ m }) => {
         ))}
       </div>
 
-      <div className="metric-sources" aria-label={`${m.title} data sources`}>
+      <div className="metric-sources" aria-label={`${m.title} 数据来源`}>
         {(snapshot?.sources || m.sources).map((source) => (
           <a key={source.label} href={source.url} target="_blank" rel="noreferrer">
             {source.label}
