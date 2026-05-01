@@ -121,7 +121,7 @@ const NewsItem = ({ n }) => {
       tabIndex={0}
       onClick={openOriginal}
       onKeyDown={onKeyDown}
-      title="Open original source"
+      title="打开原始来源"
     >
       <div className="news-time">{n.time}</div>
       <div className={`news-bar ${n.severity}`} />
@@ -129,7 +129,7 @@ const NewsItem = ({ n }) => {
         <div className="news-meta">
           <span className={`news-cat ${n.category}`}>{n.category}</span>
           <span className="news-source">{n.source}</span>
-          {isWeakHint && <span className="news-hint">WEAK SIGNAL</span>}
+          {isWeakHint && <span className="news-hint">弱信号</span>}
         </div>
         <div className="news-title">{title}</div>
         <div className="news-summary">{summary}</div>
@@ -161,7 +161,7 @@ export const NewsFeed = ({ items }) => {
       <div className="news-list">
         {filtered.length > 0
           ? filtered.map(n => <NewsItem key={n.id} n={n} />)
-          : <div className="news-empty">No P0 items in the current 30-day window.</div>}
+          : <div className="news-empty">当前 30 天窗口内没有 P0 条目。</div>}
       </div>
     </div>
   );

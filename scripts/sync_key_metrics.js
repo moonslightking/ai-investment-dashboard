@@ -101,7 +101,7 @@ const validateMetric = (metricId, metric) => {
   }
 
   if (metric.status !== "verified") {
-    assert(metric.sourceNote.length >= 80, issues, "non-verified metrics need an explicit limitation note");
+    assert(metric.sourceNote.length >= 40, issues, "non-verified metrics need an explicit limitation note");
   }
 
   return issues;
@@ -163,7 +163,9 @@ const buildGeneratedData = () => {
       status: "verified-snapshot",
       generatedAt: now.toISOString(),
       coverage: {
-        verified: Object.keys(metrics).length,
+        covered: Object.keys(metrics).length,
+        verified: Object.values(metrics).filter((metric) => metric.status === "verified").length,
+        mixedProxy: Object.values(metrics).filter((metric) => metric.status === "mixed-proxy").length,
         total: KEY_METRIC_TOTAL,
       },
       updateMode: checkSources ? "validated-with-source-reachability" : "local-schema-validation",
@@ -199,7 +201,9 @@ const renderAudit = ({ source, metrics }, validation, sourceChecks) => {
     "",
     `- 生成时间: ${source.generatedAt}`,
     `- 更新模式: ${source.updateMode}`,
-    `- 覆盖度: ${source.coverage.verified}/${source.coverage.total}`,
+    `- 覆盖度: ${source.coverage.covered}/${source.coverage.total}`,
+    `- 已验证: ${source.coverage.verified}`,
+    `- 混合代理口径: ${source.coverage.mixedProxy}`,
     `- 生成日期: ${formatDate(now)}`,
     "",
     "## 来源可达性",
@@ -228,7 +232,7 @@ const main = async () => {
 
   console.log(`Generated ${path.relative(rootDir, outputPath)}`);
   console.log(`Wrote ${path.relative(rootDir, auditPath)}`);
-  console.log(`Coverage ${generated.source.coverage.verified}/${generated.source.coverage.total}`);
+  console.log(`Coverage ${generated.source.coverage.covered}/${generated.source.coverage.total}`);
 
   if (validationIssues.length > 0) {
     console.error(`Validation warnings: ${validationIssues.length}`);

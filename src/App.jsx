@@ -27,11 +27,11 @@ const collectTickers = (chain) => [
 ];
 
 const formatSyncTime = (value) => {
-  if (!value) return "NO QUOTE SYNC";
+  if (!value) return "未同步行情";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-US", {
-    month: "short",
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
@@ -81,7 +81,7 @@ export default function App() {
     syncedAt: DATA_SOURCE.quoteSyncedAt,
     coverage: DATA_SOURCE.quoteCoverage || 0,
     requestedCount: DATA_SOURCE.companyCount || 0,
-    message: "Static generated quote snapshot",
+    message: "静态行情快照",
   });
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function App() {
     setQuoteRuntime((current) => ({
       ...current,
       status: "loading",
-      message: "Fetching live quote snapshot",
+      message: "正在拉取实时行情快照",
       requestedCount: codes.length,
     }));
 
@@ -119,8 +119,8 @@ export default function App() {
         coverage: payload.quoteCoverage || 0,
         requestedCount: payload.requestedCount || codes.length,
         message: payload.quoteCoverage === payload.requestedCount
-          ? `${payload.source || "Live"} quote snapshot loaded`
-          : `${payload.source || "Live"} loaded ${payload.quoteCoverage || 0}, missing ${Object.keys(payload.missing || {}).length}`,
+          ? `${payload.source || "实时"} 行情快照已加载`
+          : `${payload.source || "实时"} 已加载 ${payload.quoteCoverage || 0} 条，缺失 ${Object.keys(payload.missing || {}).length} 条`,
       });
     } catch (error) {
       setQuoteRuntime((current) => ({
@@ -157,7 +157,10 @@ export default function App() {
     () => new Map(KEY_METRICS.map((metric) => [metric.id, metric])),
     [],
   );
-  const verifiedMetricCount = KEY_METRIC_DATA_SOURCE.coverage?.verified || Object.keys(KEY_METRIC_DATA).length;
+  const metricCoverage = KEY_METRIC_DATA_SOURCE.coverage || {};
+  const coveredMetricCount = metricCoverage.covered ?? Object.keys(KEY_METRIC_DATA).length;
+  const verifiedMetricCount = metricCoverage.verified ?? 0;
+  const proxyMetricCount = metricCoverage.mixedProxy ?? 0;
 
   const updateSectorCompanies = (sectorId, companies) => {
     setIndustryChain((currentChain) => currentChain.map((layer) => ({
@@ -174,10 +177,10 @@ export default function App() {
   const quoteSyncLabel = formatSyncTime(quoteRuntime.syncedAt || DATA_SOURCE.quoteSyncedAt);
   const quoteCoverageLabel = `${quoteRuntime.coverage || 0}/${quoteRuntime.requestedCount || DATA_SOURCE.companyCount || 0}`;
   const quoteChipLabel = quoteRuntime.status === "live"
-    ? `${String(quoteRuntime.source || "live").toUpperCase()} LIVE`
+    ? `${String(quoteRuntime.source || "实时").toUpperCase()} 实时`
     : quoteRuntime.status === "loading"
-      ? "FETCHING LIVE"
-      : "STATIC SNAPSHOT";
+      ? "实时拉取中"
+      : "静态快照";
 
   return (
     <div className="dashboard">
@@ -185,8 +188,8 @@ export default function App() {
         <div className="brand">
           <div className="brand-logo">Ai</div>
           <div>
-            <div className="brand-title">AI Industry Board</div>
-            <div className="brand-sub">L0-L2 Ranked Core Companies</div>
+            <div className="brand-title">AI 产业看板</div>
+            <div className="brand-sub">L0-L2 核心公司排序</div>
           </div>
         </div>
 
@@ -196,7 +199,7 @@ export default function App() {
             {quoteChipLabel} · {quoteCoverageLabel} · {quoteSyncLabel}
           </div>
           <div className="topbar-stat">
-            <span className="lbl">Sectors Avg Today</span>
+            <span className="lbl">细分板块日均</span>
             <span
               className="val"
               style={{ color: boardStats.avgChange >= 0 ? "var(--up)" : "var(--down)" }}
@@ -206,14 +209,14 @@ export default function App() {
             </span>
           </div>
           <div className="topbar-stat">
-            <span className="lbl">Best</span>
+            <span className="lbl">最强</span>
             <span className="val" style={{ color: "var(--up)" }}>
               {boardStats.bestSector.code} {boardStats.bestSector.name} {boardStats.bestChange >= 0 ? "+" : ""}
               {boardStats.bestChange.toFixed(1)}%
             </span>
           </div>
           <div className="topbar-stat">
-            <span className="lbl">Worst</span>
+            <span className="lbl">最弱</span>
             <span className="val" style={{ color: "var(--down)" }}>
               {boardStats.worstSector.code} {boardStats.worstSector.name} {boardStats.worstChange.toFixed(1)}%
             </span>
@@ -221,23 +224,23 @@ export default function App() {
         </div>
       </header>
 
-      <div className="board-controls" aria-label="Dashboard display controls">
+      <div className="board-controls" aria-label="看板显示控制">
         <div className="control-group">
-          <span className="control-label">Color</span>
+          <span className="control-label">涨跌配色</span>
           <div className="segmented">
             <button
               className={convention === "us" ? "active" : ""}
               onClick={() => setConvention("us")}
               type="button"
             >
-              Green Up
+              美股：绿涨
             </button>
             <button
               className={convention === "cn" ? "active" : ""}
               onClick={() => setConvention("cn")}
               type="button"
             >
-              Red Up
+              A股：红涨
             </button>
           </div>
         </div>
@@ -249,7 +252,7 @@ export default function App() {
             onClick={fetchLiveQuotes}
             type="button"
           >
-            {quoteRuntime.status === "loading" ? "Refreshing" : "Refresh Quotes"}
+            {quoteRuntime.status === "loading" ? "刷新中" : "刷新行情"}
           </button>
         </div>
       </div>
@@ -258,9 +261,9 @@ export default function App() {
         <section className="section">
           <div className="section-header">
             <div className="section-title">
-              <h2>L0-L2 主干栈 · Industry Chain</h2>
+              <h2>L0-L2 主干栈</h2>
               <span className="sub">排序来自 L0-L2stocks.xlsx；本地优先 Futu OpenD，线上使用部署 API 拉取实时行情</span>
-              <span className="num">{allSectors.length} SECTORS</span>
+              <span className="num">{allSectors.length} 个细分</span>
             </div>
           </div>
 
@@ -290,8 +293,8 @@ export default function App() {
           <div className="section-header">
             <div className="section-title">
               <h2>关键数据追踪</h2>
-              <span className="sub">前 4 个指标已接入真实快照：API 价格、GPU 云报价、AI 资本开支、服务器 CPU</span>
-              <span className="num">{verifiedMetricCount}/{KEY_METRICS.length} 已验证 · {KEY_METRIC_GROUPS.length} 组</span>
+              <span className="sub">11 个指标已接入真实来源快照；直接验证与代理口径分开展示</span>
+              <span className="num">{coveredMetricCount}/{KEY_METRICS.length} 已覆盖 · {verifiedMetricCount} 已验证 · {proxyMetricCount} 代理口径 · {KEY_METRIC_GROUPS.length} 组</span>
             </div>
           </div>
           <div className="metric-groups">
@@ -309,9 +312,9 @@ export default function App() {
         <section className="section">
           <div className="section-header">
             <div className="section-title">
-              <h2>AI 产业动态 · News Wire</h2>
-              <span className="sub">P0 sources only · 30-day window · title/link/snippet, no full-text scraping</span>
-              <span className="num">{NEWS.length} ITEMS · {NEWS_WIRE_DATA_SOURCE.status?.toUpperCase?.() || "STATIC"}</span>
+              <h2>AI 产业动态</h2>
+              <span className="sub">仅跟踪 P0 来源 · 30 天窗口 · 只保留标题、链接与摘要，不抓取全文</span>
+              <span className="num">{NEWS.length} 条 · {NEWS_WIRE_DATA_SOURCE.status === "ok" ? "已更新" : "静态快照"}</span>
             </div>
           </div>
           <NewsFeed items={NEWS} />
