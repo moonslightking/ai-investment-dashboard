@@ -103,10 +103,11 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codes }),
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
 
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || payload.stderr || "Futu quote fetch failed");
+      if (!payload?.ok) {
+        throw new Error(payload?.error || payload?.stderr || "Futu quote fetch failed");
       }
 
       const quotes = payload.quotes || {};

@@ -58,7 +58,10 @@ const fetchFutuQuotes = (payload) => new Promise((resolve) => {
   })
   child.on('error', (error) => {
     clearTimeout(timeout)
-    resolve({ ok: false, error: error.message })
+    const message = error.code === 'ENOENT'
+      ? `Python not found (tried "${pythonBin}"). Set PYTHON or PYTHON3 env var to the correct path.`
+      : error.message
+    resolve({ ok: false, error: message })
   })
   child.on('close', (code) => {
     clearTimeout(timeout)
