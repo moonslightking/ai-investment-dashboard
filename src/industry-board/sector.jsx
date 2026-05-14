@@ -198,6 +198,27 @@ export const SectorCard = ({ onCompaniesChange, sector }) => {
             placeholder="Prev"
             value={draft.prevClose}
           />
+          <input
+            aria-label="Open price"
+            inputMode="decimal"
+            onChange={(event) => updateDraft("open", event.target.value)}
+            placeholder="Open"
+            value={draft.open}
+          />
+          <input
+            aria-label="High price"
+            inputMode="decimal"
+            onChange={(event) => updateDraft("high", event.target.value)}
+            placeholder="High"
+            value={draft.high}
+          />
+          <input
+            aria-label="Low price"
+            inputMode="decimal"
+            onChange={(event) => updateDraft("low", event.target.value)}
+            placeholder="Low"
+            value={draft.low}
+          />
           <button className="company-add" type="submit">+</button>
         </form>
       )}

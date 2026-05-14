@@ -133,7 +133,7 @@ export default function App() {
 
   useEffect(() => {
     fetchLiveQuotes();
-  }, []);
+  }, [fetchLiveQuotes]);
 
   const allSectors = useMemo(
     () => industryChain.flatMap((layer) => layer.sectors),
