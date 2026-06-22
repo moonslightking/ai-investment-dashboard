@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DATA_SOURCE,
   INDUSTRY_CHAIN,
@@ -17,6 +17,8 @@ import "./industry-board/styles.css";
 const TWEAK_DEFAULTS = {
   colorConvention: "us",
 };
+
+const QUOTE_FETCH_TIMEOUT_MS = 15_000;
 
 const cloneIndustryChain = () => JSON.parse(JSON.stringify(INDUSTRY_CHAIN));
 
@@ -74,6 +76,7 @@ const mergeLiveQuotesIntoChain = (chain, quotes) => chain.map((layer) => ({
 export default function App() {
   const [convention, setConvention] = useState(TWEAK_DEFAULTS.colorConvention);
   const [industryChain, setIndustryChain] = useState(cloneIndustryChain);
+  const industryChainRef = useRef(industryChain);
   const [quoteRuntime, setQuoteRuntime] = useState({
     status: "static",
     source: DATA_SOURCE.quoteSource || "static",
@@ -88,8 +91,19 @@ export default function App() {
     document.documentElement.setAttribute("data-convention", convention);
   }, [convention]);
 
+  useEffect(() => {
+    industryChainRef.current = industryChain;
+  }, [industryChain]);
+
   const fetchLiveQuotes = useCallback(async () => {
-    const codes = collectTickers(industryChain);
+    const codes = collectTickers(industryChainRef.current);
+    const controller = new AbortController();
+    let didTimeout = false;
+    const timeoutId = window.setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, QUOTE_FETCH_TIMEOUT_MS);
+
     setQuoteRuntime((current) => ({
       ...current,
       status: "loading",
@@ -102,6 +116,7 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codes }),
+        signal: controller.signal,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
@@ -124,13 +139,18 @@ export default function App() {
           : `${payload.source || "实时"} 已加载 ${payload.quoteCoverage || 0} 条，缺失 ${Object.keys(payload.missing || {}).length} 条`,
       });
     } catch (error) {
+      const message = didTimeout || error?.name === "AbortError"
+        ? `行情请求超过 ${QUOTE_FETCH_TIMEOUT_MS / 1000} 秒，请重试`
+        : error?.message || "行情请求失败，请重试";
       setQuoteRuntime((current) => ({
         ...current,
         status: "error",
-        message: error.message,
+        message,
       }));
+    } finally {
+      window.clearTimeout(timeoutId);
     }
-  }, [industryChain]);
+  }, []);
 
   useEffect(() => {
     fetchLiveQuotes();
