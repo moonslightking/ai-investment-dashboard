@@ -1,0 +1,35 @@
+// Mac 系统垃圾
+.DS_Store
+._*
+
+// 依赖目录（巨大、可重新生成）
+node_modules
+.venv
+venv
+__pycache__
+*.pyc
+
+// 构建产物 / 缓存
+dist
+build
+.next
+.turbo
+.cache
+.parcel-cache
+
+// IDE / 编辑器
+.idea
+.vscode
+*.swp
+*.swo
+
+// Syncthing 自己
+.stversions
+.stfolder
+
+// 日志
+*.log
+
+// 密钥（.env.example 是模板，可以同步）
+!.env.example
+.env*
